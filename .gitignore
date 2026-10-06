@@ -1,0 +1,11 @@
+# Handoff notes and the old spatial-games reference: kept locally, not submitted
+cancer-project-handoff/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
