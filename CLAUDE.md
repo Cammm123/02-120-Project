@@ -39,6 +39,10 @@
 
 ## Graded work
 
+- Keep checking the project idea against the course project guidelines,
+  especially when the concept changes. `concept.md` is a working draft and its
+  guideline check table should stay current.
+
 The proposal and project are graded. Help me think, explain, and quiz me, but the
 proposal answers are written in my words.
 
