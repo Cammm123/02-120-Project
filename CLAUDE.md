@@ -9,8 +9,10 @@
   Nowak & May (1992), "Evolutionary games and spatial chaos", deployed as a teaching
   web page (https://spatial-game.vercel.app/). This one does the same for cancer,
   starting from Hanahan's "Hallmarks of cancer" (Cell, 2026 version).
-- `cancer-project-handoff/HANDOFF.md` explains where the project stands. Read it
-  first in a new session. (That folder is local only and is not committed.)
+- `progress-log.md` says where the project stands. Read its latest entry first in
+  a new session, and add an entry at the end of each session.
+- Background from before this repo existed: `cancer-project-handoff/HANDOFF.md`
+  (local only, not committed).
 
 ## How I like to work
 
@@ -39,9 +41,14 @@
 
 ## Graded work
 
-- Keep checking the project idea against the course project guidelines,
+- Keep checking the project idea against the course project guidelines
+  (`course/guidelines.md`, summarizing `course/Project Description F26.pdf`),
   especially when the concept changes. `concept.md` is a working draft and its
   guideline check table should stay current.
+- The project must answer a scientific question. A game alone is explicitly not
+  accepted; any game layer must serve the question.
+- I write commit messages myself, in my own words. Stage changes and suggest
+  what changed, but let me write the message.
 
 The proposal and project are graded. Help me think, explain, and quiz me, but the
 proposal answers are written in my words.

@@ -1,0 +1,80 @@
+# Progress log
+
+One entry per working session: what was done, what was decided and why, and
+what comes next. A new Claude session reads the latest entry first.
+
+---
+
+## 2026-10-06: setup, choosing the topic, choosing the paper
+
+This session ran from the home folder (`~`), not the repo, so its Claude Code log
+lives under `~/.claude/projects/-Users-cameronkani/` (session
+`62d0a729-5a2b-4339-bd25-1c40a5689f1c`). Resume it from `~` with
+`claude --resume 62d0a729-5a2b-4339-bd25-1c40a5689f1c`.
+
+### What we did
+1. **Moved the project to this school account.** Read the handoff from the
+   personal account (`cancer-project-handoff/`, local only): the old spatial
+   games project, `CLAUDE.md`, the two skills.
+2. **Set up the repo.** `CLAUDE.md` and `.claude/skills/` are at the top level, and
+   the handoff folder is gitignored. Private GitHub repo:
+   https://github.com/Cammm123/02-120-Project
+3. **Brainstormed a game concept** (`concept.md`, a working draft that will keep
+   changing). The player is an oncologist. The body is an ally whose defenses
+   weaken with age. The cancer "boss" gains hallmarks level by level, with no
+   scripted AI: its apparent intelligence comes only from mutation plus
+   selection. A level is won by cure or by control. Stages are ages.
+4. **Read the official project description** (`course/`). Key findings:
+   - "A project with no scientific question, such as a video game" is not
+     accepted. So the project is a **model that answers a question**, and the
+     game is only the way to explore it.
+   - The suggested direction is to reproduce a published result, then extend it.
+   - Any data must be in the repo when proposing. Commit messages must be in
+     Cameron's words.
+5. **Read the six Ring of Honor essays** (`course/ring-of-honor.md`). They all
+   follow the same pattern: a classic model, a check against a known answer, an
+   extension, an interface, and a discussion of limitations. None is a game, and
+   none reproduces an exact published number. Doing so would put us ahead.
+6. **Settled the structure:** build a simulation whose result matches a real
+   published scientific result, as spatial games matched Nowak & May's 29.9%
+   cooperators.
+7. **Checked whether cancer is too uncertain to reproduce.** It isn't:
+   reproducing a model is math. Shifting conclusions about cancer go into the
+   limitations section. The real risk is a paper that doesn't publish its
+   equations and parameters.
+8. **Researched reproducible cancer models** (`research/model-candidates.md`).
+   Easy ones: Strobl 2021 (adaptive therapy), Armitage & Doll 1954 (age),
+   Kuznetsov 1994 (immune system), Hahnfeldt 1999 (blood vessels), Viossat &
+   Noble 2021. Avoid as the core: the hallmarks agent-based simulations
+   (rules have gaps, code is dead).
+9. **Chose Armitage & Doll (1954)** as the result to reproduce. Needing k rare
+   hits in a row gives a cancer rate ∝ age^(k−1). On a log-log plot that's a
+   straight line, and the paper's slopes are about 5–6.5, meaning about 6–7
+   hits. Real age-by-age cancer data (CI5-XII, IARC) downloads with no account.
+
+### Decisions (and why)
+- **Armitage & Doll as the core.** It's famous, its model is fully published, it
+  matches real data, and it is the backbone of the "age stages" idea.
+- **The game is the interface, not the project.** Required by the course rules.
+- **Hallmarks, immune decline with age, adaptive therapy** go under "where I
+  want to take it."
+- **Random variation between runs is fine.** Match on average.
+
+### Next steps (proposal due Wed Oct 7, 11:59 pm Eastern)
+1. Commit the staged files (Cameron's message). Work from inside the repo from now on.
+2. Put the Armitage & Doll 1954 PDF (PMC2007940) and the Hanahan 2026 PDF in
+   `papers/`. Check the paper's numbers (Table I slopes, the 4.97–6.48 range,
+   ages 25–74, 1950–51 mortality) against the PDF, since the research read a
+   garbled scan.
+3. Download CI5-XII (cases.csv, pop.csv) to `data/`, after checking its terms of
+   use. Record the source in `data/README.md`. Compute one rate by hand.
+4. Tutor session on the paper (`learn-with-ai-tutor`).
+5. Cameron writes the one-page proposal in their own words. Claude reviews it
+   against `course/guidelines.md`.
+   - Candidate checks: k = 1 gives a flat rate and k = 2 a linear one; the
+     simulation's slope equals k − 1; the CI5 data slopes compared with the
+     paper's.
+   - The model must be bigger than a formula: a simulated population whose
+     cells pick up hits over a lifetime, with sliders.
+6. Update `concept.md` to match. After the feedback on Oct 9: write `spec.txt`,
+   then build.

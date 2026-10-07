@@ -52,14 +52,18 @@ hallmarks and the body's own defenses weaken.
 
 ## Course guideline check
 
-Checked against the summary of the course requirements we have so far. The
-official guidelines document isn't in this folder yet; recheck once it is.
+Checked against `course/guidelines.md` (2026-10-06).
 
 | Requirement | Status |
 |---|---|
 | Own GitHub repo | Done |
-| Every project session runs in Claude Code inside the repo | Starting now |
-| Python is the course language | **Open:** confirm other languages are allowed |
+| All work in Claude Code inside the repo | Starting now (start sessions from the repo folder) |
+| Language | No rule stated; the app must run on the web with nothing to install |
+| **"No video game" rule** | **Risk:** must be a model answering a question, with the game only as a way to explore it |
 | Q1: a scientific question | **Gap:** a game isn't a question yet |
-| Q2: a working model someone can explore, not one figure | Fits |
+| Q2: a working model someone can explore, not one figure | Fits if the model comes first |
 | Q3: at least one concrete check | Candidates listed above |
+| Reproduce a published result (suggested) | **Gap:** Hanahan is a review with no single result to reproduce; pair it with a model paper |
+| Paper and sources in the repo | Add the Hanahan PDF |
+| Smallest version first | v1 = one organ, 2 to 3 hallmarks |
+| Proposal due Oct 7 | **Tomorrow** |
