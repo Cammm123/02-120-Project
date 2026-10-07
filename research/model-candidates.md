@@ -9,7 +9,7 @@ they go into the proposal. Items marked (?) the agents couldn't fully verify.
 | Model | Hallmark / theme | Type | Target to match | Access | Code |
 |---|---|---|---|---|---|
 | Strobl et al. 2021, *Cancer Res* 81:1135 (adaptive therapy, cost of resistance) | Resistance, treatment | 2 ODEs (sensitive vs resistant) | Adaptive extends time to progression by 3–104 days (fR = 1%) and 19–211 days (fR = 0.1%) | PMC8455086 | Python: github.com/MathOnco/AT_costOfResistance_LVModel |
-| Armitage & Doll 1954, *Br J Cancer* 8:1 (multistage theory) | Age, mutation accumulation | Sequential-hit model, rate ∝ t^(r−1) | Log-log slopes 4.97–6.48 (e.g. colon, men 5.18 (?)) means about 6–7 stages | PMC2007940 | Not needed |
+| Armitage & Doll 1954, *Br J Cancer* 8:1 (multistage theory) | Age, mutation accumulation | Sequential-hit model, rate ∝ t^(r−1) | Log-log slopes 4.97–6.48 (e.g. colon, men 5.18; checked against the PDF, see papers/armitage-doll-1954-notes.md) means about 6–7 stages | PMC2007940 | Not needed |
 | Kuznetsov et al. 1994, *Bull Math Biol* 56:295 (immune vs tumor) | Avoiding immune destruction | 2 ODEs | Dormant and escape states; bifurcations at μ = 0.002633 and 0.005014 | Unofficial PDF on a Rutgers course page | Not needed |
 | Hahnfeldt et al. 1999, *Cancer Res* 59:4770 (Folkman lab; tumor + blood vessels) | Inducing angiogenesis | 2 ODEs | Untreated plateau (b/d)^(3/2) ≈ 17,400 mm³ (hand check); TNP-470 set point 12,300 mm³ | Rutgers course PDF | Not needed |
 | Viossat & Noble 2021, *Nat Ecol Evol* 5:826 (tumor containment) | Treatment | ODE framework | Exact formula: containment/MTD time ratio = x/ln(1+x) | PMC8967123 | R: github.com/robjohnnoble/LogicOfContainingTumours |

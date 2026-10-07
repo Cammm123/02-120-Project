@@ -1,4 +1,4 @@
-# Game concept (working draft)
+# Project concept (working draft)
 
 Status: **draft, expected to change.** Nothing here is final. Every science claim
 is unverified until it is checked against the paper and marked with its page.
@@ -8,6 +8,24 @@ Source: Hanahan, D. "Hallmarks of cancer—Then and now, and beyond."
 
 Mission: convey the hallmarks paper clearly to the player. Every mechanic must
 come from the paper. If a mechanic doesn't teach the science, it's cut or changed.
+
+## Core model (decided 2026-10-06)
+
+Reproduce Armitage & Doll (1954), *Br J Cancer* 8:1 (`papers/brjcancer 00386.pdf`,
+notes in `papers/armitage-doll-1954-notes.md`). If a cell needs r rare changes in
+order, cancer incidence at age t grows like t^(r−1), so log(rate) against log(age)
+is a straight line with slope r − 1 (pp. 2, 10). Their Table I slopes are
+4.97–6.48 (p. 4), which means about 6–7 changes.
+
+The model is a simulated population whose cells pick up hits over a lifetime,
+with sliders, not just the formula. Real data to compare against: CI5-XII
+incidence, England 2013–2017 (`data/`).
+
+The scientific question is still to be worded by Cameron.
+
+## Where I want to take it: the game interface
+
+The game below is only a way to explore the model, never the project itself.
 
 ## The idea
 
@@ -46,13 +64,16 @@ hallmarks and the body's own defenses weaken.
 ## Candidate model checks
 
 - No mutations: no cancer ever appears.
-- Cancer rate against age has the multiple-hits (Armitage & Doll) slope.
+- One hit (r = 1) gives a flat rate; two hits (r = 2) give a rate that grows in a straight line with age.
+- The simulated log-log slope equals r − 1.
+- CI5 England slopes compared with Table I (4.97–6.48).
+- Circumcision check (pp. 8, 12): risks 0.30, 0.77, 0.98, 1.00 from 1 − ((53 − T)/53)^6.
 - Maximum constant dose leads to resistant takeover. Adaptive dosing delays it.
 - Growth with all defenses off matches logistic growth worked out by hand.
 
 ## Course guideline check
 
-Checked against `course/guidelines.md` (2026-10-06).
+Checked against `course/guidelines.md` (2026-10-06, updated after choosing Armitage & Doll).
 
 | Requirement | Status |
 |---|---|
@@ -60,10 +81,11 @@ Checked against `course/guidelines.md` (2026-10-06).
 | All work in Claude Code inside the repo | Starting now (start sessions from the repo folder) |
 | Language | No rule stated; the app must run on the web with nothing to install |
 | **"No video game" rule** | **Risk:** must be a model answering a question, with the game only as a way to explore it |
-| Q1: a scientific question | **Gap:** a game isn't a question yet |
+| Q1: a scientific question | **Gap:** core is Armitage & Doll; Cameron to word the question |
 | Q2: a working model someone can explore, not one figure | Fits if the model comes first |
 | Q3: at least one concrete check | Candidates listed above |
-| Reproduce a published result (suggested) | **Gap:** Hanahan is a review with no single result to reproduce; pair it with a model paper |
-| Paper and sources in the repo | Add the Hanahan PDF |
+| Reproduce a published result (suggested) | Armitage & Doll 1954, Table I slopes (numbers checked against the PDF) |
+| Paper and sources in the repo | Done: Armitage & Doll and Hanahan PDFs in `papers/` |
+| Data in the repo before proposing | Done: CI5-XII in `data/`, source and terms in `data/README.md` |
 | Smallest version first | v1 = one organ, 2 to 3 hallmarks |
 | Proposal due Oct 7 | **Tomorrow** |

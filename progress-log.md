@@ -78,3 +78,37 @@ lives under `~/.claude/projects/-Users-cameronkani/` (session
      cells pick up hits over a lifetime, with sliders.
 6. Update `concept.md` to match. After the feedback on Oct 9: write `spec.txt`,
    then build.
+
+---
+
+## 2026-10-06 (evening): checking the paper, getting the data
+
+Run from inside the repo from now on.
+
+### What we did
+1. **Committed the first session's files** (Cameron asked Claude to write the
+   message this time).
+2. **Checked Armitage & Doll against the PDF** (`papers/brjcancer 00386.pdf`,
+   notes in `papers/armitage-doll-1954-notes.md`). All the earlier numbers hold:
+   the Table I slopes are 4.97–6.48 (nine sites), ages 25–74, deaths in England
+   and Wales 1950–51, and only sites with more than 1000 deaths a year. Nothing
+   was misread. Found a second result we can check by hand: the circumcision
+   risks 0.30, 0.77, 0.98, 1.00 = 1 − ((53 − T)/53)^6.
+3. **Downloaded CI5-XII** (summary database) to `data/`. Free for
+   non-commercial use, with the source credited. Source, terms and file layout
+   are in `data/README.md`. `pop.csv` is person-years over the whole period.
+   Hand-checked rate: colon cancer, men, England, ages 60–64 = 6,082 /
+   7,188,268 = 846 per million per year.
+4. **Updated `concept.md`**: core model section, new candidate checks, and the
+   guideline table (paper and data gaps closed).
+
+### Still open
+- A&D used deaths (1950–51) and CI5 counts new cases (2013–17), so we compare
+  slopes, not exact rates.
+- The scientific question is still to be worded by Cameron.
+
+### Next steps (proposal due Wed Oct 7, 11:59 pm Eastern)
+1. Tutor session on the paper (`learn-with-ai-tutor`).
+2. Cameron writes the one-page proposal in their own words. Claude reviews it
+   against `course/guidelines.md`.
+3. After the feedback on Oct 9: `spec.txt`, then build.
