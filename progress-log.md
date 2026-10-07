@@ -133,3 +133,23 @@ Study item: what "fixed order" means.
   neighboring age groups is about 8 up to age 64, then 1.9 between 75–79 and 80–84.
 - Next: turn `proposal.md` into the one-page submission (due tonight, 11:59 pm
   Eastern). After the feedback on Oct 9: `spec.txt`, then build v1.
+
+### Proposal reviews and revision (2026-10-07, evening)
+- Ran proofreading, writing-simple-style and a four-reviewer editor-review on
+  `proposal.md` (all in `reviews/`). Ratings: 2 weak reject, 2 weak accept.
+  Main points: Q1 was a goal, not a question, and a carcinogen that only *starts*
+  steepens the curve instead of bending it down.
+- Claude made the easy fixes: paper and data moved first, hit/r/CI5 defined,
+  conditions added to the checks, p scaled up, a bend check with a control.
+  Cameron rewrote Q1 as a question: can p, which hit is sped up, and when
+  exposure starts **and stops** produce the downward bend in lung cancer in
+  men (Fig. 3, CI5 England)?
+- Learned: stopping exposure is what bends the line down (quitting smoking;
+  the paper says the same about the cervix, p. 7). Saturation alone flattens it
+  only slowly (slope 4.0 → 2.6 at r = 7, p = 0.05).
+
+### Next steps
+1. Paste the proposal into Google Docs and submit (due Oct 7, 11:59 pm Eastern).
+   Optional: fix "interesting results" and "resulting proposal or paper" in Q2.
+2. After the feedback on Oct 9: `spec.txt`, then build v1 (independent cells,
+   slope = r − 1 check).
