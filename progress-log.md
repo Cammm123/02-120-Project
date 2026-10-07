@@ -107,8 +107,29 @@ Run from inside the repo from now on.
   slopes, not exact rates.
 - The scientific question is still to be worded by Cameron.
 
+### Tutor session (2026-10-07, done)
+Covered: one hit gives a flat rate, rate ∝ t^(r−1), log-log slopes, broken
+assumptions (lung), flattening when hits aren't rare, timing of exposure, the
+circumcision result. Quiz 4.5/5. Cameron's notes: `notes/armitage-doll-my-notes.md`.
+Study item: what "fixed order" means.
+
 ### Next steps (proposal due Wed Oct 7, 11:59 pm Eastern)
-1. Tutor session on the paper (`learn-with-ai-tutor`).
-2. Cameron writes the one-page proposal in their own words. Claude reviews it
+1. Cameron writes the one-page proposal in their own words. Claude reviews it
    against `course/guidelines.md`.
-3. After the feedback on Oct 9: `spec.txt`, then build.
+2. After the feedback on Oct 9: `spec.txt`, then build.
+
+### Proposal brainstorming (2026-10-07)
+- Searched for papers with per-cell rules and numbers:
+  `research/cell-rules-candidates.md`. The best fits are Luebeck & Moolgavkar
+  2002 (4 hits plus dividing cells, fit to US colon data) and Nicholson et al.
+  2018 (colon crypts, about 7 stem cells each).
+- Design decisions (in `concept.md`): one person is a grid of cells, simulated to
+  age 85; each person goes in a table; rates are computed the paper's way. v1 is
+  the simplest grid, with independent cells.
+- Cameron drafted Q1–Q3 of the proposal in `proposal.md`. The question: can the
+  carcinogen's strength (p), which hit it speeds up, and its timing reproduce the
+  downward bend in lung cancer in men (Fig. 3 and CI5 England)?
+- Checked: CI5 England lung cancer in men does bend down. The slope between
+  neighboring age groups is about 8 up to age 64, then 1.9 between 75–79 and 80–84.
+- Next: turn `proposal.md` into the one-page submission (due tonight, 11:59 pm
+  Eastern). After the feedback on Oct 9: `spec.txt`, then build v1.

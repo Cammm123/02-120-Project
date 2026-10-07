@@ -21,6 +21,17 @@ The model is a simulated population whose cells pick up hits over a lifetime,
 with sliders, not just the formula. Real data to compare against: CI5-XII
 incidence, England 2013–2017 (`data/`).
 
+Decided 2026-10-07:
+- One simulation = one person, a grid of cells, year by year from birth to 85
+  (the last CI5 age group).
+- Store every simulated person in a table (e.g. age at cancer, or none), then
+  group into five-year age groups and compute new cases ÷ people still
+  cancer-free, the same kind of number as the paper and CI5.
+- v1 is the simplest grid: independent cells collecting hits, checked against
+  slope r − 1. Then build up: cells that divide (Luebeck & Moolgavkar 2002),
+  colon layout (Nicholson et al. 2018), maybe immune cells later. See
+  `research/cell-rules-candidates.md`.
+
 The scientific question is still to be worded by Cameron.
 
 ## Where I want to take it: the game interface
