@@ -55,10 +55,13 @@ proposal answers are written in my words.
 
 ## Code conventions
 
-- Python, with plain functions, type hints on every function, and a short
-  docstring for each.
-- `main.py` is the entry point (`def main(): ...` with an
-  `if __name__ == "__main__": main()` guard).
-- Run code from inside the project folder so relative paths resolve.
-- If there is a web front end, keep the model logic in its own file with its own
-  tests, separate from drawing and buttons.
+- Use whatever language fits the project's goals best (decided 2026-10-09). The
+  app must run on the web with nothing to install, so this project uses
+  JavaScript, with no build step and no libraries for the model.
+- Plain functions, with a short `/** ... */` comment on each.
+- Model logic lives in `web/model.js`, separate from drawing and buttons
+  (`web/app.js`, `web/index.html`).
+- Tests live in `web/model.test.js` and run with `node model.test.js` from `web/`.
+  They use the same `check` / `checkClose` / `checkThrows` helpers as the
+  spatial-games project. Expected numbers are worked out by hand, not copied
+  from the program's output.

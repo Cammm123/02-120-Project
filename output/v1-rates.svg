@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480" font-family="Helvetica, Arial, sans-serif">
+<rect width="720" height="480" fill="#fcfcfb"/>
+<text x="80" y="30" font-size="18" font-weight="600" fill="#0b0b0b">Simulated cancer rate by age (v1, no carcinogen)</text>
+<text x="80" y="52" font-size="13" fill="#52514e">20,000 people, 100 cells each, r = 4 hits, p = 0.005 per cell per year, seed 1. Both axes log scale.</text>
+<line x1="80" y1="72" x2="80" y2="416" stroke="#e6e5e0" stroke-width="1"/>
+<text x="80" y="436" font-size="12" fill="#52514e" text-anchor="middle">5</text>
+<line x1="222.52897930641163" y1="72" x2="222.52897930641163" y2="416" stroke="#e6e5e0" stroke-width="1"/>
+<text x="222.52897930641163" y="436" font-size="12" fill="#52514e" text-anchor="middle">10</text>
+<line x1="365.0579586128233" y1="72" x2="365.0579586128233" y2="416" stroke="#e6e5e0" stroke-width="1"/>
+<text x="365.0579586128233" y="436" font-size="12" fill="#52514e" text-anchor="middle">20</text>
+<line x1="448.43206677313566" y1="72" x2="448.43206677313566" y2="416" stroke="#e6e5e0" stroke-width="1"/>
+<text x="448.43206677313566" y="436" font-size="12" fill="#52514e" text-anchor="middle">30</text>
+<line x1="553.4710206935883" y1="72" x2="553.4710206935883" y2="416" stroke="#e6e5e0" stroke-width="1"/>
+<text x="553.4710206935883" y="436" font-size="12" fill="#52514e" text-anchor="middle">50</text>
+<line x1="622.6584108981128" y1="72" x2="622.6584108981128" y2="416" stroke="#e6e5e0" stroke-width="1"/>
+<text x="622.6584108981128" y="436" font-size="12" fill="#52514e" text-anchor="middle">70</text>
+<line x1="696" y1="72" x2="696" y2="416" stroke="#e6e5e0" stroke-width="1"/>
+<text x="696" y="436" font-size="12" fill="#52514e" text-anchor="middle">100</text>
+<line x1="80" y1="416" x2="696" y2="416" stroke="#e6e5e0" stroke-width="1"/>
+<text x="72" y="420" font-size="12" fill="#52514e" text-anchor="end">0.1</text>
+<line x1="80" y1="330" x2="696" y2="330" stroke="#e6e5e0" stroke-width="1"/>
+<text x="72" y="334" font-size="12" fill="#52514e" text-anchor="end">1</text>
+<line x1="80" y1="244" x2="696" y2="244" stroke="#e6e5e0" stroke-width="1"/>
+<text x="72" y="248" font-size="12" fill="#52514e" text-anchor="end">10</text>
+<line x1="80" y1="158" x2="696" y2="158" stroke="#e6e5e0" stroke-width="1"/>
+<text x="72" y="162" font-size="12" fill="#52514e" text-anchor="end">100</text>
+<line x1="80" y1="72" x2="696" y2="72" stroke="#e6e5e0" stroke-width="1"/>
+<text x="72" y="76" font-size="12" fill="#52514e" text-anchor="end">1,000</text>
+<text x="388" y="462" font-size="13" fill="#52514e" text-anchor="middle">Age (middle of each five-year group)</text>
+<text transform="translate(22 244) rotate(-90)" font-size="13" fill="#52514e" text-anchor="middle">New cancers per 100,000 person-years</text>
+<line x1="222.52897930641163" y1="344.71702913579327" x2="674.3351542398599" y2="98.52246170044742" stroke="#8a8984" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text x="674.3351542398599" y="86.52246170044742" font-size="12" fill="#52514e" text-anchor="end">dashed: slope 3 = r − 1 (Armitage &amp; Doll), through the 60–64 point</text>
+<polyline fill="none" stroke="#2a78d6" stroke-width="2" points="268.4,330.0 337.6,330.0 389.3,247.9 430.5,220.0 464.9,214.5 494.3,179.5 520.1,186.8 542.9,159.6 563.5,151.9 582.2,146.0 599.4,139.4 615.2,134.7 629.9,118.1 643.6,115.4 656.4,110.2"/>
+<circle cx="268.4" cy="330.0" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 10–14: 1 cases in 99,997 person-years = 1.0 per 100,000</title></circle>
+<circle cx="337.6" cy="330.0" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 15–19: 1 cases in 99,994 person-years = 1.0 per 100,000</title></circle>
+<circle cx="389.3" cy="247.9" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 20–24: 9 cases in 99,976 person-years = 9.0 per 100,000</title></circle>
+<circle cx="430.5" cy="220.0" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 25–29: 19 cases in 99,914 person-years = 19.0 per 100,000</title></circle>
+<circle cx="464.9" cy="214.5" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 30–34: 22 cases in 99,807 person-years = 22.0 per 100,000</title></circle>
+<circle cx="494.3" cy="179.5" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 35–39: 56 cases in 99,629 person-years = 56.2 per 100,000</title></circle>
+<circle cx="520.1" cy="186.8" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 40–44: 46 cases in 99,384 person-years = 46.3 per 100,000</title></circle>
+<circle cx="542.9" cy="159.6" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 45–49: 95 cases in 99,048 person-years = 95.9 per 100,000</title></circle>
+<circle cx="563.5" cy="151.9" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 50–54: 116 cases in 98,566 person-years = 117.7 per 100,000</title></circle>
+<circle cx="582.2" cy="146.0" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 55–59: 135 cases in 97,916 person-years = 137.9 per 100,000</title></circle>
+<circle cx="599.4" cy="139.4" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 60–64: 160 cases in 97,187 person-years = 164.6 per 100,000</title></circle>
+<circle cx="615.2" cy="134.7" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 65–69: 180 cases in 96,347 person-years = 186.8 per 100,000</title></circle>
+<circle cx="629.9" cy="118.1" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 70–74: 277 cases in 95,238 person-years = 290.9 per 100,000</title></circle>
+<circle cx="643.6" cy="115.4" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 75–79: 294 cases in 93,868 person-years = 313.2 per 100,000</title></circle>
+<circle cx="656.4" cy="110.2" r="4.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>Ages 80–84: 332 cases in 92,309 person-years = 359.7 per 100,000</title></circle>
+<text x="696" y="406" font-size="11" fill="#52514e" text-anchor="end">No cases (not drawn): 0–4, 5–9</text>
+</svg>

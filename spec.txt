@@ -1,0 +1,230 @@
+CANCER AGE-CURVE SIMULATOR - BUILD SPEC (v1)
+============================================
+Status: DRAFT. All five decisions made 2026-10-09; waiting for a final read
+  and OK. Nothing is built yet.
+Created: 2026-10-09.
+
+
+GOAL
+----
+Answer Q1 of proposal.md: can p, which hit a carcinogen speeds up, and when
+exposure starts and stops produce the downward bend at old ages in lung cancer
+in men (Armitage & Doll 1954, Fig. 3; CI5 England)?
+
+v1 does NOT answer that yet. v1 only rebuilds the Armitage & Doll straight
+line (no carcinogen) and proves it is right. Everything later is built on it.
+
+
+THE MODEL (v1)
+--------------
+1. A person is a grid of N cells (default 10 x 10 = 100). Each cell holds a
+   hit count from 0 to r. Everyone starts with 0 hits in every cell.
+
+       one person, N = 9 cells, r = 3
+
+       +---+---+---+
+       | 0 | 1 | 0 |      each number = hits that cell has so far
+       +---+---+---+
+       | 2 | 0 | 0 |      a cell that reaches 3 = cancer
+       +---+---+---+
+       | 0 | 0 | 1 |
+       +---+---+---+
+
+   In v1 the cells do not affect each other, so the grid shape does not
+   matter yet. It matters later, when cells divide and have neighbors.
+
+2. Each year of age a = 0, 1, 2, ..., 84, every cell with fewer than r hits
+   gets its NEXT hit with probability p. Hits come in a fixed order: a cell
+   with 1 hit can only gain hit #2, never jump to hit #3.
+
+       one cell, r = 3, p = 0.5 (made-up coin flips):
+
+       age:     0     1     2     3     4
+       flip:   miss  HIT   miss  HIT   HIT
+       hits:    0     1     1     2     3   <- cancer at age 4
+
+3. The first year any cell reaches r hits is the person's age at cancer.
+   That person stops there (they are no longer cancer-free). Nobody reaches
+   r by the end of age 84 -> age at cancer = none.
+
+4. Simulate M people (default 20,000) and store a table with one row per
+   person:  { person: 0, ageAtCancer: 61 },  { person: 1, ageAtCancer: null } ...
+
+5. Cancer rate for each five-year age group (0-4, 5-9, ..., 80-84), using
+   exact person-years (decided 2026-10-09):
+
+       rate = (cases with ageAtCancer in the group)
+              / (person-years at risk in the group)
+
+   A person adds 1 person-year for each year of age in the group that they
+   START cancer-free, including the year they get cancer. Example, group
+   60-64: cancer-free all 5 years -> 5; cancer at 61 -> 2 (ages 60 and 61);
+   cancer before 60 -> 0.
+   This is cases per person-year, like CI5 (pop.csv counts person-years).
+   (CI5 divides by everyone alive, including people who already had cancer;
+   for a rare cancer the difference is tiny.)
+
+6. Slope = the least-squares straight line through
+   log(rate) vs log(middle age of the group), using the groups from 25-29 to
+   80-84 (A&D used 25-74; CI5 goes to 85+). Groups with 0 cases are skipped,
+   since log(0) does not exist.
+
+7. Random numbers come from a seeded generator: the same seed gives the exact
+   same people every time, so a test can be repeated. (JavaScript's built-in
+   Math.random cannot be given a seed.)
+
+8. Every run reports three numbers (decided 2026-10-09):
+   - slope of the log-log line, next to the exact slope from the formula;
+   - R squared of that line: how straight the points are (1 = perfectly
+     straight). It does NOT say the slope is right: rates growing like age^2
+     instead of age^3 still give R squared = 1. The bend in v2 should lower it.
+   - a z-score for each age group: how far the simulated case count is from
+     the expected count, in standard deviations:
+         z = (simulated cases - expected cases) / sqrt(expected cases)
+     Expected 100, got 130 -> z = 30 / 10 = 3.
+
+
+THE EXACT ANSWER TO COMPARE AGAINST
+-----------------------------------
+With no carcinogen, a cell gets one yes/no chance per year, so after t years
+its number of hits is min(r, Binomial(t, p)). That gives, with no simulation:
+
+   P(one cell done by t years)  = P(Binomial(t, p) >= r)
+   P(person cancer-free after t) = S(t) = (1 - P(cell done by t))^N
+   expected rate in a group g..g+4 =
+       (S(g) - S(g+5)) / (S(g) + S(g+1) + S(g+2) + S(g+3) + S(g+4))
+   (top: share of people who get cancer in the group; bottom: expected
+   person-years at risk, one year for each age they start cancer-free)
+
+The simulation must land close to this (HAND CHECK 6). It is a stronger check
+than "slope = r - 1", which is only true when hits are rare.
+
+Computer-arithmetic trap (found 2026-10-09): with real numbers these chances
+are tiny, and the obvious way to compute them is wrong.
+  - P(Binomial(85, 1.4e-6) >= 6) computed as 1 - P(fewer than 6) gives
+    3.3e-15; adding up P(exactly 6), P(exactly 7), ... directly gives the right
+    answer, 3.29e-27. (A computer keeps only about 16 digits, so "1 minus
+    something extremely close to 1" loses everything.)
+  - (1 - q)^N with q = 1e-27 and N = 1e8 comes out as exactly 1 (so 0 risk),
+    because 1 - 1e-27 rounds to 1. Use Math.log1p / Math.expm1, which are
+    made for this.
+expectedRates must sum the top of the Binomial directly and use log1p/expm1.
+
+
+FUNCTIONS (built and tested one at a time, in this order)
+---------------------------------------------------------
+  makeRng(seed)                    -> a function giving numbers in [0, 1)
+  stepCell(hits, r, p, rand)       -> the cell's hits after one year
+  simulatePerson(N, r, p, rand)    -> age at cancer, or null
+  simulatePopulation(M, N, r, p, seed) -> the table of people
+  ageGroupRates(table)             -> 17 groups: cases, person-years, rate
+  fitLine(xs, ys)                  -> slope, intercept and R squared of the
+                                      least-squares line (plain numbers)
+  logLogFit(ages, rates)           -> fitLine on log(age), log(rate),
+                                      skipping groups with 0 cases
+  expectedRates(N, r, p)           -> the exact rates from the formula above,
+                                      plus expected cases per person
+  zScores(simulated, expected, M)  -> one z per age group
+  runReport(M, N, r, p, seed)      -> the three numbers for one run
+
+
+HAND CHECKS (must pass)
+-----------------------
+All numbers below were worked out by hand and double-checked with a separate
+calculation on 2026-10-09.
+
+1. p = 0: nobody ever gets cancer (every ageAtCancer is null).
+
+2. p = 1, r = 3: every cell gains a hit every year (ages 0, 1, 2), so every
+   person gets cancer at age 2.
+
+3. r = 1, N = 1 (one hit, proposal Test Case 3): the rate is flat. Each year
+   a cancer-free person has chance p, so cases per person-year = p exactly.
+   With p = 0.1: expectedRates gives 0.1 in EVERY group.
+
+4. Line fitting.
+   - logLogFit on rates made from rate = age^3: slope exactly 3, R squared 1.
+   - A flat rate (age^0): slope 0.
+   - Two points, rate 1 at age 10 and rate 4 at age 20:
+     slope = log(4) / log(2) = 2.
+   - fitLine on points (0, 0), (1, 2), (2, 1), worked by hand:
+     means x = 1, y = 1; slope = [(-1)(-1) + 0 + (1)(0)] / [1 + 0 + 1] = 0.5;
+     line gives 0.5, 1, 1.5; misses -0.5, 1, -0.5 -> squared 1.5;
+     spread around the mean y: 1 + 1 + 0 = 2; R squared = 1 - 1.5/2 = 0.25.
+   - zScores: expected 100, simulated 130 -> 3; simulated 100 -> 0.
+
+5. expectedRates for a tiny case, N = 1, r = 2, p = 0.5 (a coin flip each
+   year; cancer = the 2nd head). S(a) = P(at most 1 head in a flips):
+     S(0) = 1, S(1) = 1, S(2) = 3/4, S(3) = 4/8 = 1/2, S(4) = 5/16,
+     S(5) = 6/32 = 3/16.
+   - Group 0-4: cases = 1 - 3/16 = 13/16.
+     Person-years = 1 + 1 + 3/4 + 1/2 + 5/16 = 57/16.
+     Rate = 13/57 = 0.22807.
+   - Group 5-9 (needs S(5) ... S(10) = 11/1024): rate = 181/424 = 0.42689.
+
+6. Simulation vs formula: with the default settings, the z-scores are small
+   in every group. The pass line is SET BY MEASURING, not guessed: run 20
+   seeds, look at how much the z-scores and the slope vary from run to run,
+   and set the line at about 3 times that spread. Write the measured numbers
+   here when we have them.
+
+7. Slope vs r - 1 (proposal Test Cases 1 and 4): with r = 4, the slope is
+   close to 3, but not equal, because hits are not perfectly rare:
+     r = 4, p = 0.002 -> exact slope 2.99, but only about 56 cases in
+                         20,000 people (too few to measure)
+     r = 4, p = 0.005 -> exact slope 2.84, about 1,750 cases  <- default
+   The simulated slope must be close to the exact slope (2.84; the pass line
+   is measured as in check 6), and the gap from 3 is explained by the same
+   flattening we measured in the tutor session (r = 7, p = 0.05: slopes
+   4.0 -> 2.6).
+
+8. Real numbers (option b, decided 2026-10-09). With about 1e8 cells per
+   person (Luebeck & Moolgavkar 2002) and a real mutation rate of
+   1.4e-6 per cell per year (their Table 1, APC gene, white males), the
+   pure model's chance of cancer by age 85 is:
+       r = 2: about 0.5        r = 4: 7.8e-10       r = 6: 3.3e-19
+   So with 6 hits, nobody in 100,000 (or in the whole world) would get
+   cancer, while real lifetime risks are a few percent. This is a known
+   weakness of the pure multistage model, and the reason Luebeck &
+   Moolgavkar add cells that divide. It goes in the final paper's discussion.
+   How: expectedRates computes it from the formula (simulating 1e8 cells one
+   by one is too slow, and would only ever show 0 cases). The test checks
+   the r = 6 number, 3.3e-19, which needs the arithmetic trap above handled.
+   (One p for every hit is a simplification: real hits are different
+   genes with different rates.)
+
+
+DEFAULTS (proposed)
+-------------------
+  N = 100 cells, r = 4 hits, p = 0.005 per year, seed = 1.
+  M = 20,000 people for now (decided 2026-10-09); about 100,000 for the
+  final versions. Rule for choosing M later: enough people that the 25-29
+  group expects at least 100 cases (noise about +-10%), if it runs fast enough.
+  Work: 20,000 x 100 x 85 = up to 170 million coin flips per run. Not timed
+  yet; we measure it when simulatePopulation is built.
+  Real cancers are far rarer; p is scaled up so the curve has enough cases
+  (proposal Q2). Only the shape of the curve is compared with real data.
+
+
+NOT IN v1 (later versions)
+--------------------------
+  v2: the carcinogen. It multiplies p for ONE chosen hit (#1 ... #r) between a
+      start age and a stop age. This is what Q1 asks about, and what proposal
+      Test Cases 2 (the 5,000x timing check) and 5 (the bend vs CI5) need.
+  v3: the web page: sliders for p, which hit, start and stop; the log-log
+      graph next to CI5 England lung cancer in men; presets.
+  Later: cells that divide (Luebeck & Moolgavkar 2002), immune cells.
+
+
+DECISIONS FOR CAMERON (OK the default, or change it)
+----------------------------------------------------
+1. Cells per person N: DECIDED, 100 (10 x 10) as a stand-in with the scaled
+   p (option b). Real counts: about 1e8 (research/cell-rules-candidates.md).
+2. People M: DECIDED, 20,000 now, about 100,000 later.
+3. Default r = 4 and p = 0.005 for the v1 checks? DECIDED (option b): the
+   simulation uses this scaled-up p, labeled as a stand-in that only
+   reproduces the curve's shape; HAND CHECK 8 shows what real numbers give.
+   Realism comes with dividing cells (Luebeck & Moolgavkar 2002).
+4. Rate formula: DECIDED, exact person-years.
+5. Tolerance: DECIDED. Each run reports slope, R squared and z-scores
+   (MODEL item 8); the tests' pass lines are measured over 20 seeds.

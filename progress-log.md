@@ -153,3 +153,69 @@ Study item: what "fixed order" means.
    Optional: fix "interesting results" and "resulting proposal or paper" in Q2.
 2. After the feedback on Oct 9: `spec.txt`, then build v1 (independent cells,
    slope = r − 1 check).
+
+## 2026-10-09: build journal, language, v1 spec
+
+- Build journal set up from the course page: `.claude/hooks/save_journal.py`
+  and `.claude/settings.json` copy every session into `journal/` (commit
+  318ee8f, pushed). Scanned for keys and passwords: none.
+- Staff feedback on the proposal: no changes asked for.
+- Language: Cameron dropped the Python rule (use what fits the goals). The app
+  must run on the web, so the model is JavaScript (`web/model.js`, tests with
+  node), like the spatial-games project. `CLAUDE.md` updated.
+- Drafted `spec.txt` for v1: independent cells, no carcinogen, a seeded random
+  generator, rates per five-year group, log-log slope, and an exact formula
+  (Binomial) to compare the simulation against. Hand-check numbers verified
+  separately (e.g. N = 1, r = 2, p = 0.5 gives 0.1625 and 181/960).
+- Found: with r = 4, p = 0.005 the exact slope is 2.84, not 3 (hits aren't
+  perfectly rare); p = 0.002 gives 2.99 but only about 56 cases in 20,000 people.
+
+### Next steps
+1. Cameron reads `spec.txt` and answers its five DECISIONS.
+2. Then build v1 one function at a time, starting with `makeRng`, each with
+   tests (test-every-function).
+
+### Spec decisions (2026-10-09, later)
+- Cells per person: 100, as a stand-in. Real colon counts are about 1e8.
+  With independent cells, fewer cells with a larger p gives almost the same
+  curve. People: 20,000 now, about 100,000 later.
+- Rate = cases / exact person-years (like CI5).
+- Each run reports slope, R squared and a z-score per age group. R squared
+  alone can't catch a wrong slope. Pass lines get measured over 20 seeds.
+- Option b: v1 uses a scaled-up p, plus a real-numbers check from the
+  formula. With 1e8 cells, p = 1.4e-6/yr and r = 6, lifetime risk is about
+  3e-19, so the pure model gives essentially no cancer. That's why dividing
+  cells are needed (Luebeck & Moolgavkar), and it goes in the discussion.
+- Found an arithmetic trap: 1 - P(fewer than 6) gives 3.3e-15 when the true
+  value is 3.29e-27. The spec says to sum directly and use log1p/expm1.
+
+### First code: v1 model functions (2026-10-09, evening)
+Built in `web/model.js`, one function at a time, each with tests in
+`web/model.test.js` (81 tests, all pass: `cd web && node model.test.js`).
+Each function was also run with planted bugs to confirm the tests catch them.
+- `makeRng(seed)`: seeded random numbers.
+- `stepCell`: one year for one cell (hit if rand() < p, fixed order, stops at r).
+- `simulatePerson`: N cells, ages 0-84, returns the first age any cell reaches r.
+- `simulatePopulation`: M people from one generator, checks inputs. The default
+  run (20,000 x 100 cells) takes about 1.5 s.
+- `ageGroupRates`: 17 five-year groups, exact person-years.
+
+**Bug found and fixed: the first generator (mulberry32) was biased.** The
+default run gave 1,853 cancers when 1,753 were expected (z = 2.5), and 40 more
+seeds were also high (z = 3.3). A separate Python simulation matched the
+formula, and so did the model with `Math.random`. Over 30 million cells,
+mulberry32 gave too few cells with 0 hits (z = -9.6). Each single number was
+fine; the problem only showed up across 85 numbers in a row. Switched to sfc32
+(all |z| < 2 on the same check). The check is kept in `web/rng-check.js`
+(about 10 s). Lesson: passing simple tests on single numbers doesn't prove the
+generator is right for this use.
+
+**First graph:** `output/v1-rates.svg` (made by `web/plot-rates.js`). Simulated
+rate vs age on log-log axes, with a dashed slope-3 (= r - 1) guide line. From
+age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
+10-19 have 1 each (noise). Hand check: 60-64 = 160 / 97,187 = 164.6 per 100,000.
+
+### Next steps
+1. `fitLine` / `logLogFit` (slope and R squared), then `expectedRates` with
+   the log1p/expm1 care from the spec, then `zScores` and `runReport`.
+2. Add the exact formula's curve to the graph next to the simulation.
