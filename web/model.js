@@ -114,5 +114,42 @@ function ageGroupRates(table) {
   return groups;
 }
 
+/**
+ * Least-squares straight line through the points (xs[i], ys[i]): the line
+ * with the smallest sum of squared vertical misses.
+ *   slope = sum (x - mean x)(y - mean y) / sum (x - mean x)^2
+ *   intercept = mean y - slope * mean x
+ *   R squared = 1 - (sum of squared misses) / sum (y - mean y)^2
+ * Returns { slope, intercept, rSquared, note }. note is null, except when every
+ * y is the same: then R squared would be 0/0, so it is set to 1 (the points
+ * sit exactly on the flat line) and note says so (decided 2026-10-30).
+ * Throws for different lengths, fewer than 2 points, or every x the same
+ * (a vertical line has no slope).
+ */
+function fitLine(xs, ys) {
+  if (xs.length !== ys.length) throw new Error(`xs and ys must be the same length, got ${xs.length} and ${ys.length}`);
+  if (xs.length < 2) throw new Error(`need at least 2 points, got ${xs.length}`);
+  if (xs.every((x) => x === xs[0])) throw new Error(`every x is ${xs[0]}: a vertical line has no slope`);
+  if (ys.every((y) => y === ys[0])) {
+    return { slope: 0, intercept: ys[0], rSquared: 1, note: `every y is ${ys[0]}: R squared is 0/0, set to 1 because the points sit exactly on the line` };
+  }
+  const n = xs.length;
+  const meanX = xs.reduce((s, x) => s + x, 0) / n;
+  const meanY = ys.reduce((s, y) => s + y, 0) / n;
+  let sxy = 0; // sum of (x - mean x)(y - mean y)
+  let sxx = 0; // sum of (x - mean x)^2
+  let syy = 0; // sum of (y - mean y)^2: the spread of y
+  for (let i = 0; i < n; i++) {
+    sxy += (xs[i] - meanX) * (ys[i] - meanY);
+    sxx += (xs[i] - meanX) ** 2;
+    syy += (ys[i] - meanY) ** 2;
+  }
+  const slope = sxy / sxx;
+  const intercept = meanY - slope * meanX;
+  let missesSquared = 0; // sum of (y - line's y)^2
+  for (let i = 0; i < n; i++) missesSquared += (ys[i] - (intercept + slope * xs[i])) ** 2;
+  return { slope, intercept, rSquared: 1 - missesSquared / syy, note: null };
+}
+
 // Lets the same file load in the browser (as globals) and in Node (for tests).
-if (typeof module !== "undefined") module.exports = { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates };
+if (typeof module !== "undefined") module.exports = { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine };

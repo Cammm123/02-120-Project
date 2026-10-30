@@ -219,3 +219,34 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
 1. `fitLine` / `logLogFit` (slope and R squared), then `expectedRates` with
    the log1p/expm1 care from the spec, then `zScores` and `runReport`.
 2. Add the exact formula's curve to the graph next to the simulation.
+
+## 2026-10-30: schedule check, report design, fitLine
+
+- Schedule check against course/guidelines.md: checkpoint 2 is today; first
+  version live on the web by Nov 20. Not started yet: v1 part 2, v2
+  (carcinogen), v3 (page). No sessions between Oct 9 and today.
+- Deploy plan (Cameron): Vercel, about Nov 16-17, a few days before the
+  Nov 20 deadline to leave time for fixes. Spec order kept (v1 -> v2 -> v3).
+- Learned: least squares as projection (Cameron's 21-241 view: the error
+  vector y - A x-hat is the shortest possible). The Binomial distribution:
+  chances for each number of hits in t yes/no years; cancer = AT LEAST r
+  hits (t = 3, p = 0.5, r = 2: 4/8, not 3/8; r = 1: 7/8). R squared = how
+  straight, not whether the slope is right. z = miss / sqrt(expected).
+- Report design decided (spec.txt items 9-10): all 17 groups in the table,
+  marked "under 25" / "0 cases" when left out of the slope; z keeps its sign;
+  colors plain / yellow (2-3) / red (> 3), no green; a z-vs-age plot.
+- Cameron's rule (spec item 10): every output also gets a "what could fool
+  us here" check. Example: small z everywhere can still hide a bend. Possible
+  check for that: sum of z squared (17 groups at z = +1.5 -> 38, noise -> ~17).
+- Built `fitLine` (26 new tests, 107 total, all pass). Flat y: R squared = 1
+  with a note (Cameron's choice (a)); the note must show on report and graph.
+  6 planted bugs, each caught. The 4 "throws" tests passed before fitLine
+  existed (missing function throws too); the planted bugs check them properly.
+- Found: rates flat "in principle" but off in the 17th digit
+  (0.1, 0.10000000000000002, 0.1) give R squared 0, not 1. Decide a
+  tolerance when building logLogFit.
+
+### Next steps
+1. `logLogFit`, deciding the flat-rate tolerance.
+2. `expectedRates` (sum the top of the Binomial; log1p/expm1), `zScores`,
+   `runReport`, then the exact curve on the graph.

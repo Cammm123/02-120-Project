@@ -83,6 +83,27 @@ THE MODEL (v1)
          z = (simulated cases - expected cases) / sqrt(expected cases)
      Expected 100, got 130 -> z = 30 / 10 = 3.
 
+9. How the report is shown (decided 2026-10-30):
+   - runReport returns all the numbers as an object; a separate print
+     function turns it into a table in the terminal.
+   - The table lists ALL 17 age groups, including the ones left out of the
+     slope, marked with the reason: "under 25" or "0 cases".
+   - z keeps its sign (too high or too low). The summary line shows the
+     largest |z| AND its sign and age group.
+   - Colors: |z| < 2 plain (normal noise), 2 to 3 yellow (worth a look; with
+     17 groups about 1 yellow is expected by chance), over 3 red. No green:
+     z near 0 is not "better" than z = 1.5, both are noise.
+   - A z-vs-age plot, so a pattern across groups is visible (e.g. every old
+     age group at z = +1.5: each one looks fine, but together the curve bends).
+   - When every rate is the same, fitLine sets R squared to 1 (0/0 otherwise)
+     and returns a note; the report AND the graph show that note next to R
+     squared, so a "1" is never shown without its reason.
+
+10. Don't be fooled by a good-looking result (Cameron, 2026-10-30): every time
+   the program outputs a result, we also ask what hidden problem could make
+   it look better than it is, and check for it. Example: small z in every
+   group can still hide a bend if the z's all lean the same way.
+
 
 THE EXACT ANSWER TO COMPARE AGAINST
 -----------------------------------

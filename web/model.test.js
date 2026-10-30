@@ -2,7 +2,7 @@
 // Every expected number below was worked out by hand (or by a separate,
 // differently written program) rather than copied from model.js output.
 
-const { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates } = require("./model.js");
+const { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine } = require("./model.js");
 
 let passed = 0;
 let failed = 0;
@@ -396,6 +396,83 @@ check("empty table: every rate is null", ageGroupRates([]).every((g) => g.rate =
   checkBetween("one hit, p = 0.1: rate in 0-4 is about 0.1", group(g, 0).rate, 0.0953, 0.1047);
   checkBetween("one hit, p = 0.1: rate in 5-9 is about 0.1 (flat)", group(g, 5).rate, 0.0939, 0.1061);
 }
+
+// ---------------------------------------------------------------------------
+console.log("\nfitLine");
+
+// 1. Spec hand check 4: (0,0), (1,2), (2,1).
+//    Means x = 1, y = 1; slope = [(-1)(-1) + 0 + (1)(0)] / [1 + 0 + 1] = 0.5;
+//    intercept = 1 - 0.5 x 1 = 0.5; line gives 0.5, 1, 1.5; misses -0.5, 1, -0.5
+//    -> squared 1.5; spread of y = 1 + 1 + 0 = 2; R squared = 1 - 1.5/2 = 0.25.
+{
+  const f = safe(() => fitLine([0, 1, 2], [0, 2, 1]));
+  checkClose("(0,0) (1,2) (2,1): slope 0.5", f.slope, 0.5);
+  checkClose("(0,0) (1,2) (2,1): intercept 0.5", f.intercept, 0.5);
+  checkClose("(0,0) (1,2) (2,1): R squared 0.25", f.rSquared, 0.25);
+}
+
+// 2. A second scattered case, so a hardcoded answer can't pass.
+//    (1,1) (2,3) (3,2) (4,4): means 2.5, 2.5; x misses -1.5 -0.5 0.5 1.5,
+//    y misses -1.5 0.5 -0.5 1.5; sum of products = 2.25 - 0.25 - 0.25 + 2.25 = 4;
+//    sum of x misses squared = 5 -> slope 0.8; intercept = 2.5 - 0.8 x 2.5 = 0.5.
+//    Line gives 1.3 2.1 2.9 3.7; misses -0.3 0.9 -0.9 0.3 -> squared 1.8;
+//    spread of y = 5; R squared = 1 - 1.8/5 = 0.64.
+{
+  const f = safe(() => fitLine([1, 2, 3, 4], [1, 3, 2, 4]));
+  checkClose("(1,1) (2,3) (3,2) (4,4): slope 0.8", f.slope, 0.8);
+  checkClose("(1,1) (2,3) (3,2) (4,4): intercept 0.5", f.intercept, 0.5);
+  checkClose("(1,1) (2,3) (3,2) (4,4): R squared 0.64", f.rSquared, 0.64);
+  check("scattered points: no note", f.note, null);
+}
+
+// 3. Points exactly on y = 2x + 1 (x = 0..3: y = 1, 3, 5, 7).
+{
+  const f = safe(() => fitLine([0, 1, 2, 3], [1, 3, 5, 7]));
+  checkClose("on y = 2x + 1: slope 2", f.slope, 2);
+  checkClose("on y = 2x + 1: intercept 1", f.intercept, 1);
+  checkClose("on y = 2x + 1: R squared 1", f.rSquared, 1);
+}
+
+// 4. Negative slope: (0,4) (1,2) (2,0) lie on y = -2x + 4.
+{
+  const f = safe(() => fitLine([0, 1, 2], [4, 2, 0]));
+  checkClose("(0,4) (1,2) (2,0): slope -2", f.slope, -2);
+  checkClose("(0,4) (1,2) (2,0): intercept 4", f.intercept, 4);
+  checkClose("(0,4) (1,2) (2,0): R squared 1", f.rSquared, 1);
+}
+
+// 5. Two points always lie on a line: (1,1) (3,5) -> slope 4/2 = 2,
+//    intercept 1 - 2 x 1 = -1, R squared 1.
+{
+  const f = safe(() => fitLine([1, 3], [1, 5]));
+  checkClose("two points (1,1) (3,5): slope 2", f.slope, 2);
+  checkClose("two points (1,1) (3,5): intercept -1", f.intercept, -1);
+  checkClose("two points (1,1) (3,5): R squared 1", f.rSquared, 1);
+}
+
+// 6. The order of the points doesn't matter: test 2 shuffled.
+{
+  const f = safe(() => fitLine([3, 1, 4, 2], [2, 1, 4, 3]));
+  checkClose("test 2 shuffled: slope still 0.8", f.slope, 0.8);
+  checkClose("test 2 shuffled: R squared still 0.64", f.rSquared, 0.64);
+}
+
+// 7. Every y the same: (0,5) (1,5) (2,5). Slope 0, intercept 5. R squared
+//    is 1 - 0/0 (undefined); decided 2026-10-30: report 1, since the points
+//    sit exactly on the line, and say why in a note.
+{
+  const f = safe(() => fitLine([0, 1, 2], [5, 5, 5]));
+  checkClose("all y = 5: slope 0", f.slope, 0);
+  checkClose("all y = 5: intercept 5", f.intercept, 5);
+  check("all y = 5: R squared set to 1", f.rSquared, 1);
+  check("all y = 5: note explains the 1", typeof f.note === "string" && f.note.length > 0, true);
+}
+
+// 8. Inputs it must refuse.
+checkThrows("xs and ys of different lengths", () => fitLine([0, 1, 2], [0, 1]));
+checkThrows("only 1 point", () => fitLine([1], [1]));
+checkThrows("no points", () => fitLine([], []));
+checkThrows("every x the same (vertical line)", () => fitLine([2, 2], [1, 3]));
 
 // ---------------------------------------------------------------------------
 console.log(`\n${passed} passed, ${failed} failed`);
