@@ -250,3 +250,29 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
 1. `logLogFit`, deciding the flat-rate tolerance.
 2. `expectedRates` (sum the top of the Binomial; log1p/expm1), `zScores`,
    `runReport`, then the exact curve on the graph.
+
+## 2026-11-02: build journal update, logLogFit
+
+- Build journal updated to the course's current setup (course page
+  project/journal/): new save_journal.py (adds journal/readable/ and Codex
+  logs), git pre-commit hook. settings.json already matched. Committed and
+  pushed by Cameron ("Set up build journal").
+- Learned: a power law (rate = c x age^k) is straight on log-log axes, slope
+  k; an exponential is straight on log(rate) vs age. A&D is a power law: per
+  10 years, age^3 grows 3.4x at 20 -> 30 but only 1.5x at 70 -> 80.
+  Slope 5 -> doubling age multiplies the rate by 2^5 = 32.
+- Spec v3: added a second graph, plain rate vs age (Cameron's idea).
+- logLogFit decisions (Cameron): the caller picks the age groups; returns
+  used / skipped counts; throws for age <= 0 or a negative rate; skips rates
+  of 0 or null. Natural log.
+- Built logLogFit: 25 new checks, 132 total, all pass.
+
+### Next steps
+1. REMINDER (Cameron asked): look at the logLogFit checks again before
+   moving on. The 6 throws checks passed even before logLogFit existed, so
+   plant bugs (e.g. remove the age <= 0 check, drop the rate but not its
+   age) and make sure each one is caught.
+2. Flat-rate tolerance still open: rates like 0.1, 0.10000000000000002, 0.1
+   give R squared 0, not 1. Decide when building expectedRates (where such
+   rates first come up).
+3. `expectedRates`, `zScores`, `runReport`, then the exact curve on the graph.

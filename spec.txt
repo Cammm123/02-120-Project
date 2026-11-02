@@ -234,6 +234,9 @@ NOT IN v1 (later versions)
       Test Cases 2 (the 5,000x timing check) and 5 (the bend vs CI5) need.
   v3: the web page: sliders for p, which hit, start and stop; the log-log
       graph next to CI5 England lung cancer in men; presets.
+      Also a second graph with plain rate vs age (no logs), so the rise and
+      the old-age bend are easy to read (Cameron, 2026-11-02). The log-log
+      graph stays: its slope is the measurement.
   Later: cells that divide (Luebeck & Moolgavkar 2002), immune cells.
 
 

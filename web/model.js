@@ -151,5 +151,30 @@ function fitLine(xs, ys) {
   return { slope, intercept, rSquared: 1 - missesSquared / syy, note: null };
 }
 
+/**
+ * Straight line through log(rate) vs log(age), natural log (spec.txt, MODEL
+ * item 6). For rate = c * age^k this gives slope k and intercept log(c).
+ * Rates of 0 or null have no point to plot (log(0) does not exist), so they
+ * are skipped together with their age, and counted. The caller picks which
+ * age groups to pass in (decided 2026-11-02).
+ * Returns fitLine's { slope, intercept, rSquared, note } plus used and skipped.
+ * Throws for different lengths, an age of 0 or below, or a negative rate;
+ * fitLine throws if fewer than 2 points are left.
+ */
+function logLogFit(ages, rates) {
+  if (ages.length !== rates.length) throw new Error(`ages and rates must be the same length, got ${ages.length} and ${rates.length}`);
+  const xs = [];
+  const ys = [];
+  for (let i = 0; i < ages.length; i++) {
+    if (ages[i] <= 0) throw new Error(`age must be above 0, got ${ages[i]}`);
+    if (rates[i] !== null && rates[i] < 0) throw new Error(`rate cannot be negative, got ${rates[i]}`);
+    if (rates[i] === null || rates[i] === 0) continue; // skip: no point to plot
+    xs.push(Math.log(ages[i]));
+    ys.push(Math.log(rates[i]));
+  }
+  const line = fitLine(xs, ys);
+  return { ...line, used: xs.length, skipped: ages.length - xs.length };
+}
+
 // Lets the same file load in the browser (as globals) and in Node (for tests).
-if (typeof module !== "undefined") module.exports = { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine };
+if (typeof module !== "undefined") module.exports = { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit };

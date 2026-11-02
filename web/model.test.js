@@ -2,7 +2,7 @@
 // Every expected number below was worked out by hand (or by a separate,
 // differently written program) rather than copied from model.js output.
 
-const { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine } = require("./model.js");
+const { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit } = require("./model.js");
 
 let passed = 0;
 let failed = 0;
@@ -473,6 +473,94 @@ checkThrows("xs and ys of different lengths", () => fitLine([0, 1, 2], [0, 1]));
 checkThrows("only 1 point", () => fitLine([1], [1]));
 checkThrows("no points", () => fitLine([], []));
 checkThrows("every x the same (vertical line)", () => fitLine([2, 2], [1, 3]));
+
+// ---------------------------------------------------------------------------
+console.log("\nlogLogFit");
+
+// logLogFit(ages, rates) = fitLine on log(age), log(rate) (natural log),
+// skipping rates of 0 or null (no point to plot), plus how many it used and
+// skipped. The caller picks which age groups to pass in (decided 2026-11-02).
+// For rate = c x age^k the logs give  log(rate) = log(c) + k log(age):
+// slope k, intercept log(c).
+
+// The 12 group middles from 25-29 to 80-84: 27, 32, ..., 82.
+const middles = Array.from({ length: 12 }, (_, i) => 27 + 5 * i);
+
+// 1. rate = age^3 (c = 1): slope exactly 3, intercept log(1) = 0, R squared 1.
+{
+  const f = safe(() => logLogFit(middles, middles.map((a) => a ** 3)));
+  checkClose("age^3: slope 3", f.slope, 3);
+  checkClose("age^3: intercept log(1) = 0", f.intercept, 0);
+  checkClose("age^3: R squared 1", f.rSquared, 1);
+  check("age^3: used 12, skipped 0", [f.used, f.skipped], [12, 0]);
+}
+
+// 2. Two points, rate 1 at age 10 and rate 4 at age 20 (spec Test 4):
+//    doubling age multiplies the rate by 4 = 2^2, so slope 2.
+//    Intercept: log(1) = b + 2 log(10), so b = -2 log(10) = -4.6052.
+{
+  const f = safe(() => logLogFit([10, 20], [1, 4]));
+  checkClose("(10,1) (20,4): slope 2", f.slope, 2);
+  checkClose("(10,1) (20,4): intercept -2 log(10)", f.intercept, -2 * Math.log(10));
+}
+
+// 3. A constant that is not 1: rate = 0.001 x age^2 at ages 10, 20, 40
+//    (rates 0.1, 0.4, 1.6). Slope 2; intercept log(0.001) = -6.9078.
+//    Catches the wrong log base: log10 would give intercept -3.
+{
+  const f = safe(() => logLogFit([10, 20, 40], [0.1, 0.4, 1.6]));
+  checkClose("0.001 age^2: slope 2", f.slope, 2);
+  checkClose("0.001 age^2: intercept log(0.001), natural log", f.intercept, Math.log(0.001));
+}
+
+// 4. Points NOT on a line. Ages 1, e, e^2 have logs 0, 1, 2; rates 1, e^2, e
+//    have logs 0, 2, 1. So the log points are (0,0) (1,2) (2,1), the fitLine
+//    case worked by hand above: slope 0.5, intercept 0.5.
+//    Line's y: 0.5, 1, 1.5; misses -0.5, 1, -0.5; squared sum 1.5.
+//    Spread of y: 1 + 1 + 0 = 2. R squared = 1 - 1.5/2 = 0.25.
+//    Catches forgetting a log on either side (the answer would change).
+const E = Math.E;
+{
+  const f = safe(() => logLogFit([1, E, E ** 2], [1, E ** 2, E]));
+  checkClose("not a line: slope 0.5", f.slope, 0.5);
+  checkClose("not a line: intercept 0.5", f.intercept, 0.5);
+  checkClose("not a line: R squared 0.25", f.rSquared, 0.25);
+}
+
+// 5. A 0 rate is skipped TOGETHER with its age. Same points as test 4, plus
+//    (age 5, rate 0) in front. Same answer, used 3, skipped 1. If the age
+//    were not dropped with its rate, the pairs would shift and the slope change.
+{
+  const f = safe(() => logLogFit([5, 1, E, E ** 2], [0, 1, E ** 2, E]));
+  checkClose("0 rate skipped: slope still 0.5", f.slope, 0.5);
+  checkClose("0 rate skipped: R squared still 0.25", f.rSquared, 0.25);
+  check("0 rate skipped: used 3, skipped 1", [f.used, f.skipped], [3, 1]);
+}
+
+// 6. null (nobody at risk) is skipped the same way, here at the end, and
+//    with a 0 in the middle: used 3, skipped 2.
+{
+  const f = safe(() => logLogFit([1, 7, E, E ** 2, 9], [1, 0, E ** 2, E, null]));
+  checkClose("0 and null skipped: slope still 0.5", f.slope, 0.5);
+  check("0 and null skipped: used 3, skipped 2", [f.used, f.skipped], [3, 2]);
+}
+
+// 7. Flat rate (age^0, spec Test 4): every rate 0.1, so every log is the same
+//    number. Slope 0, R squared set to 1, and fitLine's note comes through.
+{
+  const f = safe(() => logLogFit(middles, middles.map(() => 0.1)));
+  checkClose("flat 0.1: slope 0", f.slope, 0);
+  check("flat 0.1: R squared 1", f.rSquared, 1);
+  check("flat 0.1: note explains the 1", typeof f.note === "string" && f.note.length > 0, true);
+}
+
+// 8. Inputs it must refuse (decided 2026-11-02).
+checkThrows("age 0 (log(0) does not exist)", () => logLogFit([0, 10], [1, 2]));
+checkThrows("negative age", () => logLogFit([-5, 10], [1, 2]));
+checkThrows("negative rate", () => logLogFit([10, 20], [-1, 2]));
+checkThrows("ages and rates of different lengths", () => logLogFit([10, 20, 30], [1, 2]));
+checkThrows("only 1 point left after skipping", () => logLogFit([10, 20], [0, 2]));
+checkThrows("every rate 0: no points", () => logLogFit([10, 20], [0, 0]));
 
 // ---------------------------------------------------------------------------
 console.log(`\n${passed} passed, ${failed} failed`);
