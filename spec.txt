@@ -129,7 +129,15 @@ are tiny, and the obvious way to compute them is wrong.
   - (1 - q)^N with q = 1e-27 and N = 1e8 comes out as exactly 1 (so 0 risk),
     because 1 - 1e-27 rounds to 1. Use Math.log1p / Math.expm1, which are
     made for this.
-expectedRates must sum the top of the Binomial directly and use log1p/expm1.
+  - The top of the rate, S(g) - S(g+5), has the same problem (found
+    2026-11-04): both are 0.99999... and the difference rounds to 0. With
+    N = 1e8 and one-cell chances 1e-27 and 3e-27 it gives 0 instead of
+    2e-19, even when S itself is computed with log1p. Instead use
+    F(t) = 1 - S(t), the chance of cancer by t, computed directly as
+    -expm1(N * log1p(-q)); then top = F(g+5) - F(g). The bottom (a sum of
+    S values near 1) is fine as it is.
+expectedRates must sum the top of the Binomial directly, use log1p/expm1,
+and compute the top of the rate from F, not from S.
 
 
 FUNCTIONS (built and tested one at a time, in this order)
@@ -143,8 +151,18 @@ FUNCTIONS (built and tested one at a time, in this order)
                                       least-squares line (plain numbers)
   logLogFit(ages, rates)           -> fitLine on log(age), log(rate),
                                       skipping groups with 0 cases
+  cellDoneChance(t, r, p)          -> P(Binomial(t, p) >= r): one cell has
+                                      r hits after t years, summed from the
+                                      top (decided 2026-11-04)
   expectedRates(N, r, p)           -> the exact rates from the formula above,
-                                      plus expected cases per person
+                                      same shape as ageGroupRates (decided
+                                      2026-11-04): 17 groups of { start, end,
+                                      casesPerPerson, personYearsPerPerson,
+                                      rate }; rate null when person-years = 0.
+                                      Same input checks as simulatePopulation.
+                                      Edges: p = 0 -> every rate 0;
+                                      p = 1, r = 3 -> group 0-4 rate 1/3,
+                                      later groups null.
   zScores(simulated, expected, M)  -> one z per age group
   runReport(M, N, r, p, seed)      -> the three numbers for one run
 

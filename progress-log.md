@@ -276,3 +276,38 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
    give R squared 0, not 1. Decide when building expectedRates (where such
    rates first come up).
 3. `expectedRates`, `zScores`, `runReport`, then the exact curve on the graph.
+
+## 2026-11-04: planted bugs in logLogFit, checkThrows, expectedRates plan
+
+- Reminder from 11-02 done: planted 10 bugs in copies of logLogFit (no
+  length / age / negative-rate check, age < 0 instead of <= 0, null not
+  skipped, rate dropped but age kept, log10, x and y swapped, no log on age,
+  skipped always 0). All 10 caught. No bugs found in logLogFit itself.
+- Weakness found in the test helper: checkThrows passed on ANY error, so a
+  typo in a test ("logLogfit is not defined") or an input that trips a
+  different check first passed for the wrong reason.
+- Fixed (Cameron chose option A): checkThrows(name, fn, words) now requires
+  the error message to contain `words`; missing or empty words is a FAIL.
+  7 new checks test the helper itself (it must reject wrong words, a typo
+  crash, no throw, empty words). With only the helper changed, all 24 old
+  throws tests failed ("no expected words given"); with words added, all 24
+  pass, so none had been passing on the wrong error. 139 tests, all pass.
+- Learned for expectedRates: S(t) for one cell (r = 2, p = 0.5: S(2) = 3/4);
+  N independent cells multiply (N = 2: S(2) = 9/16, S(3) = 1/4); the rate
+  divides by the people still at risk ((S(2) - S(3)) / S(2) = 1/3, checked a
+  second way by listing histories); the 16-digit trap (1 - 0.999...9 with 17
+  nines gives 0, not 1e-17).
+- Spec: a third arithmetic rule (found today, checked by running it):
+  S(g) - S(g+5) rounds to 0 for realistic numbers (gave 0 instead of 2e-19),
+  so the top of the rate uses F(t) = 1 - S(t) = -expm1(N log1p(-q)).
+- Decisions (Cameron): build cellDoneChance(t, r, p) first as its own tested
+  helper; expectedRates returns the same shape as ageGroupRates.
+- Realistic settings matter, not just the defaults: the research question
+  compares with real CI5 data, and v3 sliders reach tiny chances.
+
+### Next steps
+1. Open check question: C(5, 3) by the product rule, then by counting.
+2. cellDoneChance: tests, function, planted bugs.
+3. expectedRates: tests (13/57, 181/424, p = 0, p = 1, r = 1, tiny case),
+   flat-rate tolerance decision at the r = 1 test, function, planted bugs.
+4. zScores, runReport. Checkpoint Nov 10; first version on the web by Nov 20.

@@ -23,11 +23,33 @@ function checkClose(name, actual, expected) {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}` + (ok ? "" : `  (got ${actual}, expected ${expected})`));
 }
 
-/** Record a check that `fn` throws an error. */
-function checkThrows(name, fn) {
-  let threw = false;
-  try { fn(); } catch (e) { threw = true; }
-  check(name, threw, true);
+/**
+ * What happens when fn runs: "did not throw", or the error's message.
+ * Kept separate from checkThrows so the helper itself can be tested.
+ */
+function thrownMessage(fn) {
+  try { fn(); } catch (e) { return e.message; }
+  return "did not throw";
+}
+
+/** The rule checkThrows uses: a real error was thrown, and its message contains the (required) words. */
+function throwsWith(message, words) {
+  return typeof words === "string" && words.length > 0 && message !== "did not throw" && message.includes(words);
+}
+
+/**
+ * Record a check that fn throws AND that the error message contains `words`
+ * (decided 2026-11-04). Any error used to count, so a typo in the test or an
+ * input that trips a different check passed for the wrong reason.
+ * The words are required: leaving them out is itself a FAIL.
+ */
+function checkThrows(name, fn, words) {
+  const message = thrownMessage(fn);
+  const ok = throwsWith(message, words);
+  if (ok) passed++;
+  else failed++;
+  const reason = typeof words === "string" && words.length > 0 ? `expected an error containing "${words}", got: ${message}` : "no expected words given";
+  console.log(`${ok ? "PASS" : "FAIL"}  ${name}` + (ok ? "" : `  (${reason})`));
 }
 
 /** Record a check that `actual` lies between low and high (inclusive). */
@@ -58,7 +80,22 @@ function draw(rand, count) {
 }
 
 // ---------------------------------------------------------------------------
-console.log("makeRng");
+console.log("checkThrows (the test helper itself)");
+
+// The helper must be able to say NO, or every throws test below means nothing.
+// Each case: what fn does -> does the rule accept it?
+const thrower = () => { throw new Error("rate cannot be negative, got -1"); };
+check("right error, right words -> accepted", throwsWith(thrownMessage(thrower), "rate cannot be negative"), true);
+check("right error, wrong words -> rejected", throwsWith(thrownMessage(thrower), "same length"), false);
+check("typo in the test (not defined) -> rejected",
+  throwsWith(thrownMessage(() => notARealFunction()), "rate cannot be negative"), false);
+check("did not throw -> rejected", throwsWith(thrownMessage(() => 5), "rate cannot be negative"), false);
+check('words "did not throw" when it did not -> still rejected', throwsWith(thrownMessage(() => 5), "did not throw"), false);
+check("no words given -> rejected", throwsWith(thrownMessage(thrower), undefined), false);
+check("empty words -> rejected (every message contains \"\")", throwsWith(thrownMessage(thrower), ""), false);
+
+// ---------------------------------------------------------------------------
+console.log("\nmakeRng");
 
 // 1. It is really sfc32: matches a separate Python version (plain
 //    arithmetic mod 2^32 instead of JavaScript's bit tricks), several seeds,
@@ -128,11 +165,11 @@ check("same seed twice gives the same 1,000 numbers", draw(makeRng(7), 1000), dr
 }
 
 // 9. Bad seeds are refused instead of silently becoming some other seed.
-checkThrows("seed 1.5 (not whole) throws", () => makeRng(1.5));
-checkThrows("seed -1 (negative) throws", () => makeRng(-1));
-checkThrows("seed 4294967296 (too big) throws", () => makeRng(4294967296));
-checkThrows('seed "1" (text) throws', () => makeRng("1"));
-checkThrows("no seed throws", () => makeRng());
+checkThrows("seed 1.5 (not whole) throws", () => makeRng(1.5), "seed must be a whole number");
+checkThrows("seed -1 (negative) throws", () => makeRng(-1), "seed must be a whole number");
+checkThrows("seed 4294967296 (too big) throws", () => makeRng(4294967296), "seed must be a whole number");
+checkThrows('seed "1" (text) throws', () => makeRng("1"), "seed must be a whole number");
+checkThrows("no seed throws", () => makeRng(), "seed must be a whole number");
 
 // ---------------------------------------------------------------------------
 console.log("\nstepCell");
@@ -304,15 +341,15 @@ console.log("\nsimulatePopulation");
 }
 
 // 5. Bad inputs are refused with a clear error.
-checkThrows("M = 0 throws", () => simulatePopulation(0, 100, 4, 0.005, 1));
-checkThrows("M = 2.5 throws", () => simulatePopulation(2.5, 100, 4, 0.005, 1));
-checkThrows("N = 0 throws", () => simulatePopulation(10, 0, 4, 0.005, 1));
-checkThrows("r = 0 throws", () => simulatePopulation(10, 100, 0, 0.005, 1));
-checkThrows("p = -0.1 throws", () => simulatePopulation(10, 100, 4, -0.1, 1));
-checkThrows("p = 1.5 throws", () => simulatePopulation(10, 100, 4, 1.5, 1));
-checkThrows("p = NaN throws", () => simulatePopulation(10, 100, 4, NaN, 1));
-checkThrows('p = "0.1" (text) throws', () => simulatePopulation(10, 100, 4, "0.1", 1));
-checkThrows("seed 1.5 throws (checked by makeRng)", () => simulatePopulation(10, 100, 4, 0.005, 1.5));
+checkThrows("M = 0 throws", () => simulatePopulation(0, 100, 4, 0.005, 1), "M (people) must be");
+checkThrows("M = 2.5 throws", () => simulatePopulation(2.5, 100, 4, 0.005, 1), "M (people) must be");
+checkThrows("N = 0 throws", () => simulatePopulation(10, 0, 4, 0.005, 1), "N (cells) must be");
+checkThrows("r = 0 throws", () => simulatePopulation(10, 100, 0, 0.005, 1), "r (hits) must be");
+checkThrows("p = -0.1 throws", () => simulatePopulation(10, 100, 4, -0.1, 1), "p must be a number from 0 to 1");
+checkThrows("p = 1.5 throws", () => simulatePopulation(10, 100, 4, 1.5, 1), "p must be a number from 0 to 1");
+checkThrows("p = NaN throws", () => simulatePopulation(10, 100, 4, NaN, 1), "p must be a number from 0 to 1");
+checkThrows('p = "0.1" (text) throws', () => simulatePopulation(10, 100, 4, "0.1", 1), "p must be a number from 0 to 1");
+checkThrows("seed 1.5 throws (checked by makeRng)", () => simulatePopulation(10, 100, 4, 0.005, 1.5), "seed must be a whole number");
 check("p = 0 and p = 1 are allowed (the edges)", safe(() => simulatePopulation(1, 1, 1, 0, 1).length + simulatePopulation(1, 1, 1, 1, 1).length), 2);
 
 // ---------------------------------------------------------------------------
@@ -469,10 +506,10 @@ console.log("\nfitLine");
 }
 
 // 8. Inputs it must refuse.
-checkThrows("xs and ys of different lengths", () => fitLine([0, 1, 2], [0, 1]));
-checkThrows("only 1 point", () => fitLine([1], [1]));
-checkThrows("no points", () => fitLine([], []));
-checkThrows("every x the same (vertical line)", () => fitLine([2, 2], [1, 3]));
+checkThrows("xs and ys of different lengths", () => fitLine([0, 1, 2], [0, 1]), "xs and ys must be the same length");
+checkThrows("only 1 point", () => fitLine([1], [1]), "need at least 2 points, got 1");
+checkThrows("no points", () => fitLine([], []), "need at least 2 points, got 0");
+checkThrows("every x the same (vertical line)", () => fitLine([2, 2], [1, 3]), "vertical line has no slope");
 
 // ---------------------------------------------------------------------------
 console.log("\nlogLogFit");
@@ -555,12 +592,12 @@ const E = Math.E;
 }
 
 // 8. Inputs it must refuse (decided 2026-11-02).
-checkThrows("age 0 (log(0) does not exist)", () => logLogFit([0, 10], [1, 2]));
-checkThrows("negative age", () => logLogFit([-5, 10], [1, 2]));
-checkThrows("negative rate", () => logLogFit([10, 20], [-1, 2]));
-checkThrows("ages and rates of different lengths", () => logLogFit([10, 20, 30], [1, 2]));
-checkThrows("only 1 point left after skipping", () => logLogFit([10, 20], [0, 2]));
-checkThrows("every rate 0: no points", () => logLogFit([10, 20], [0, 0]));
+checkThrows("age 0 (log(0) does not exist)", () => logLogFit([0, 10], [1, 2]), "age must be above 0, got 0");
+checkThrows("negative age", () => logLogFit([-5, 10], [1, 2]), "age must be above 0, got -5");
+checkThrows("negative rate", () => logLogFit([10, 20], [-1, 2]), "rate cannot be negative");
+checkThrows("ages and rates of different lengths", () => logLogFit([10, 20, 30], [1, 2]), "ages and rates must be the same length");
+checkThrows("only 1 point left after skipping", () => logLogFit([10, 20], [0, 2]), "need at least 2 points, got 1");
+checkThrows("every rate 0: no points", () => logLogFit([10, 20], [0, 0]), "need at least 2 points, got 0");
 
 // ---------------------------------------------------------------------------
 console.log(`\n${passed} passed, ${failed} failed`);
