@@ -115,14 +115,25 @@ function ageGroupRates(table) {
 }
 
 /**
+ * y values closer together than this count as flat (decided 2026-11-07).
+ * Measured: expectedRates for r = 1, p = 0.1 gives rates that should all be
+ * 0.1 but differ in the 13th digit; their logs spread by about 8e-12, which
+ * made R squared 0.61. 1e-9 is ~100x above that noise; on log(rate) it means
+ * rates within 0.0000001% of each other, which real simulated rates never are.
+ */
+const FLAT_Y = 1e-9;
+
+/**
  * Least-squares straight line through the points (xs[i], ys[i]): the line
  * with the smallest sum of squared vertical misses.
  *   slope = sum (x - mean x)(y - mean y) / sum (x - mean x)^2
  *   intercept = mean y - slope * mean x
  *   R squared = 1 - (sum of squared misses) / sum (y - mean y)^2
- * Returns { slope, intercept, rSquared, note }. note is null, except when every
- * y is the same: then R squared would be 0/0, so it is set to 1 (the points
- * sit exactly on the flat line) and note says so (decided 2026-10-30).
+ * Returns { slope, intercept, rSquared, note }. note is null, except when the
+ * y values are flat: all within FLAT_Y of each other. Then the only spread is
+ * rounding noise and R squared would measure the noise (0/0 if exactly
+ * equal), so slope is 0, intercept the mean y, R squared 1, and note says so
+ * (decided 2026-10-30; "within FLAT_Y" instead of "exactly equal" 2026-11-07).
  * Throws for different lengths, fewer than 2 points, or every x the same
  * (a vertical line has no slope).
  */
@@ -130,8 +141,9 @@ function fitLine(xs, ys) {
   if (xs.length !== ys.length) throw new Error(`xs and ys must be the same length, got ${xs.length} and ${ys.length}`);
   if (xs.length < 2) throw new Error(`need at least 2 points, got ${xs.length}`);
   if (xs.every((x) => x === xs[0])) throw new Error(`every x is ${xs[0]}: a vertical line has no slope`);
-  if (ys.every((y) => y === ys[0])) {
-    return { slope: 0, intercept: ys[0], rSquared: 1, note: `every y is ${ys[0]}: R squared is 0/0, set to 1 because the points sit exactly on the line` };
+  const meanYAll = ys.reduce((s, y) => s + y, 0) / ys.length;
+  if (Math.max(...ys) - Math.min(...ys) < FLAT_Y) {
+    return { slope: 0, intercept: meanYAll, rSquared: 1, note: `every y is within ${FLAT_Y} of ${meanYAll}: flat, so R squared is set to 1 (any spread is rounding noise)` };
   }
   const n = xs.length;
   const meanX = xs.reduce((s, x) => s + x, 0) / n;
@@ -176,5 +188,78 @@ function logLogFit(ages, rates) {
   return { ...line, used: xs.length, skipped: ages.length - xs.length };
 }
 
+/**
+ * P(Binomial(t, p) >= r): the chance one cell has all r hits after t years
+ * (spec.txt, THE EXACT ANSWER). Adds P(exactly j) for j = r ... t directly,
+ * never 1 - P(fewer than r), which rounds to 0 for tiny chances.
+ *   P(exactly j) = C(t, j) * p^j * (1 - p)^(t - j)
+ * C(t, j) is built as (t/1) * ((t-1)/2) * ... * ((t-j+1)/j), so no factorial
+ * (85! is about 10^128) is ever formed.
+ * Throws for t not a whole number >= 0, r not a whole number >= 1, or p
+ * outside 0 to 1 (same words as simulatePopulation).
+ */
+function cellDoneChance(t, r, p) {
+  if (!Number.isInteger(t) || t < 0) throw new Error(`t (years) must be a whole number >= 0, got ${t}`);
+  if (!Number.isInteger(r) || r < 1) throw new Error(`r (hits) must be a whole number >= 1, got ${r}`);
+  if (typeof p !== "number" || !(p >= 0 && p <= 1)) throw new Error(`p must be a number from 0 to 1, got ${p}`);
+  if (r > t) return 0; // can't have more hits than years
+  let coefficient = 1; // C(t, 0)
+  for (let k = 1; k <= r; k++) coefficient *= (t - k + 1) / k; // now C(t, r)
+  let total = 0;
+  for (let j = r; j <= t; j++) {
+    total += coefficient * p ** j * (1 - p) ** (t - j);
+    coefficient *= (t - j) / (j + 1); // C(t, j) -> C(t, j + 1)
+  }
+  return total;
+}
+
+/**
+ * Below this, a chance of being cancer-free is rounding noise, not a real
+ * value (spec.txt, decided 2026-11-07). Measured: the largest noise in q when
+ * the true q is exactly 1 is 8.9e-16 (r = 1-20, ages 0-85), so 1e-12 is about
+ * 1,000 times above it, and far below anything a simulation could show.
+ */
+const TINY_S = 1e-12;
+
+/**
+ * The exact rate in each five-year age group, with no random numbers
+ * (spec.txt, THE EXACT ANSWER). Same shape as ageGroupRates:
+ * [{ start, end, casesPerPerson, personYearsPerPerson, rate }, ...].
+ * With q = cellDoneChance(t, r, p) for one cell after t years:
+ *   S(t) = (1 - q)^N  cancer-free at the start of age t (all N cells below r)
+ *   F(t) = 1 - S(t)   computed directly as -expm1(N * log1p(-q))
+ *   casesPerPerson = F(g+5) - F(g)  (from F: S(g) - S(g+5) rounds to 0)
+ *   personYearsPerPerson = S(g) + ... + S(g+4), the same rule as ageGroupRates
+ *   rate = cases / person-years, or null when person-years = 0.
+ * When S is below TINY_S it is rounding noise (q came out as 0.9999999999999999
+ * instead of 1), so S is set to 0 and F to 1 (decided 2026-11-07, spec.txt).
+ * Throws for N not a whole number >= 1; cellDoneChance checks r and p.
+ */
+function expectedRates(N, r, p) {
+  if (!Number.isInteger(N) || N < 1) throw new Error(`N (cells) must be a whole number >= 1, got ${N}`);
+  const S = [];
+  const F = [];
+  for (let t = 0; t <= YEARS; t++) {
+    // q can come out as 1.0000000000000002 (noise above an impossible 1),
+    // and log(1 - q) of that is NaN, so cap it at 1.
+    const q = Math.min(1, cellDoneChance(t, r, p));
+    const logOneCellOK = Math.log1p(-q); // log(1 - q)
+    let s = Math.exp(N * logOneCellOK);
+    let f = -Math.expm1(N * logOneCellOK);
+    if (s < TINY_S) { s = 0; f = 1; } // noise, not a real chance (catch 1: F too)
+    S.push(s);
+    F.push(f);
+  }
+  const groups = [];
+  for (let start = 0; start < YEARS; start += 5) {
+    const casesPerPerson = F[start + 5] - F[start];
+    let personYearsPerPerson = 0;
+    for (let t = start; t < start + 5; t++) personYearsPerPerson += S[t];
+    const rate = personYearsPerPerson > 0 ? casesPerPerson / personYearsPerPerson : null;
+    groups.push({ start, end: start + 4, casesPerPerson, personYearsPerPerson, rate });
+  }
+  return groups;
+}
+
 // Lets the same file load in the browser (as globals) and in Node (for tests).
-if (typeof module !== "undefined") module.exports = { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit };
+if (typeof module !== "undefined") module.exports = { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates };

@@ -98,6 +98,9 @@ THE MODEL (v1)
    - When every rate is the same, fitLine sets R squared to 1 (0/0 otherwise)
      and returns a note; the report AND the graph show that note next to R
      squared, so a "1" is never shown without its reason.
+     "The same" means y values within 1e-9 of each other (DECIDED 2026-11-07):
+     r = 1 expected rates are all 0.1 but differ in the 13th digit, which
+     gave R squared 0.61. Their logs spread by ~8e-12; 1e-9 is ~100x above.
 
 10. Don't be fooled by a good-looking result (Cameron, 2026-10-30): every time
    the program outputs a result, we also ask what hidden problem could make
@@ -136,6 +139,14 @@ are tiny, and the obvious way to compute them is wrong.
     F(t) = 1 - S(t), the chance of cancer by t, computed directly as
     -expm1(N * log1p(-q)); then top = F(g+5) - F(g). The bottom (a sum of
     S values near 1) is fine as it is.
+  - The mirror image (found 2026-11-07 by the p = 1 test): when nearly
+    everyone already has cancer, S = 1 - q is the tiny number, and rounding
+    in q (0.9999999999999999 or 1.0000000000000002 instead of 1) turns it
+    into noise: p = 1, r = 3 gave group 10-14 a rate of -2. DECIDED
+    (Cameron, option B): cap q at 1, and treat S below 1e-12 as 0 (with
+    F = 1, so cases are never negative). Measured: the largest noise in q is
+    8.9e-16, so 1e-12 is ~1,000x above it; an S that small means less than
+    one person at risk in any simulation, so nothing real is lost.
 expectedRates must sum the top of the Binomial directly, use log1p/expm1,
 and compute the top of the rate from F, not from S.
 

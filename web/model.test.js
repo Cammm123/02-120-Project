@@ -2,7 +2,7 @@
 // Every expected number below was worked out by hand (or by a separate,
 // differently written program) rather than copied from model.js output.
 
-const { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit } = require("./model.js");
+const { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates } = require("./model.js");
 
 let passed = 0;
 let failed = 0;
@@ -52,6 +52,22 @@ function checkThrows(name, fn, words) {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}` + (ok ? "" : `  (${reason})`));
 }
 
+/**
+ * True if actual is within a fraction `rel` of expected (rel = 0.001 -> 0.1%).
+ * For tiny answers like 3.3e-27, where checkClose's 1e-9 would accept 0.
+ */
+function relClose(actual, expected, rel) {
+  return typeof actual === "number" && Math.abs(actual - expected) <= rel * Math.abs(expected);
+}
+
+/** Record a check that actual is within a fraction `rel` of expected. */
+function checkRelClose(name, actual, expected, rel) {
+  const ok = relClose(actual, expected, rel);
+  if (ok) passed++;
+  else failed++;
+  console.log(`${ok ? "PASS" : "FAIL"}  ${name}` + (ok ? "" : `  (got ${actual}, expected ${expected} within ${rel * 100}%)`));
+}
+
 /** Record a check that `actual` lies between low and high (inclusive). */
 function checkBetween(name, actual, low, high) {
   const ok = actual >= low && actual <= high;
@@ -93,6 +109,12 @@ check("did not throw -> rejected", throwsWith(thrownMessage(() => 5), "rate cann
 check('words "did not throw" when it did not -> still rejected', throwsWith(thrownMessage(() => 5), "did not throw"), false);
 check("no words given -> rejected", throwsWith(thrownMessage(thrower), undefined), false);
 check("empty words -> rejected (every message contains \"\")", throwsWith(thrownMessage(thrower), ""), false);
+
+// relClose must also be able to say no, above all to the 0 the trap gives.
+check("relClose: 3.29e-27 vs 3.29e-27 -> accepted", relClose(3.29e-27, 3.29e-27, 0.001), true);
+check("relClose: 0 vs 3.29e-27 -> rejected", relClose(0, 3.29e-27, 0.001), false);
+check("relClose: 3.3e-15 (the trap's answer) vs 3.29e-27 -> rejected", relClose(3.3e-15, 3.29e-27, 0.001), false);
+check("relClose: 0.2% off with 0.1% allowed -> rejected", relClose(1.002, 1, 0.001), false);
 
 // ---------------------------------------------------------------------------
 console.log("\nmakeRng");
@@ -505,6 +527,27 @@ console.log("\nfitLine");
   check("all y = 5: note explains the 1", typeof f.note === "string" && f.note.length > 0, true);
 }
 
+// 7b. Flat up to rounding noise (decided 2026-11-07): y values within 1e-9
+//     of each other count as flat. The 10-30 example: 0.1, 0.10000000000000002,
+//     0.1 used to give R squared 0 instead of 1.
+{
+  const f = safe(() => fitLine([0, 1, 2], [0.1, 0.10000000000000002, 0.1]));
+  checkClose("y off in the 17th digit: slope 0", f.slope, 0);
+  check("y off in the 17th digit: R squared 1 (was 0)", f.rSquared, 1);
+  check("y off in the 17th digit: note explains the 1", typeof f.note === "string" && f.note.length > 0, true);
+}
+
+// 7c. Just outside the threshold is NOT flat: test 1's points with y scaled
+//     down by 1e-9: (0, 0) (1, 2e-9) (2, 1e-9). Spread 2e-9 > 1e-9.
+//     Scaling y scales slope and intercept but not R squared:
+//     slope 0.5e-9, R squared 0.25, no note.
+{
+  const f = safe(() => fitLine([0, 1, 2], [0, 2e-9, 1e-9]));
+  checkRelClose("spread 2e-9: a real fit, slope 5e-10", f.slope, 5e-10, 1e-6);
+  checkClose("spread 2e-9: R squared 0.25 (not set to 1)", f.rSquared, 0.25);
+  check("spread 2e-9: no note", f.note, null);
+}
+
 // 8. Inputs it must refuse.
 checkThrows("xs and ys of different lengths", () => fitLine([0, 1, 2], [0, 1]), "xs and ys must be the same length");
 checkThrows("only 1 point", () => fitLine([1], [1]), "need at least 2 points, got 1");
@@ -598,6 +641,187 @@ checkThrows("negative rate", () => logLogFit([10, 20], [-1, 2]), "rate cannot be
 checkThrows("ages and rates of different lengths", () => logLogFit([10, 20, 30], [1, 2]), "ages and rates must be the same length");
 checkThrows("only 1 point left after skipping", () => logLogFit([10, 20], [0, 2]), "need at least 2 points, got 1");
 checkThrows("every rate 0: no points", () => logLogFit([10, 20], [0, 0]), "need at least 2 points, got 0");
+
+// ---------------------------------------------------------------------------
+console.log("\ncellDoneChance");
+
+// cellDoneChance(t, r, p) = P(Binomial(t, p) >= r): the chance one cell has
+// all r hits after t years, adding P(exactly r) + ... + P(exactly t) directly
+// (spec: never 1 - P(fewer than r)). P(exactly j) = C(t, j) p^j (1 - p)^(t - j).
+
+// 1. Last session's coin examples (p = 0.5, so every outcome is 1/2^t).
+//    t = 3, r = 2: HHT HTH THH HHH -> 4/8.
+//    t = 3, r = 1: everything but TTT -> 7/8.
+//    t = 2, r = 2: only HH -> 1/4 (so S(2) = 3/4 for one cell).
+//    t = 3, r = 3: only HHH -> 1/8 (r = t, the last possible term alone).
+checkClose("t=3 r=2 p=0.5: 4/8", safe(() => cellDoneChance(3, 2, 0.5)), 4 / 8);
+checkClose("t=3 r=1 p=0.5: 7/8", safe(() => cellDoneChance(3, 1, 0.5)), 7 / 8);
+checkClose("t=2 r=2 p=0.5: 1/4", safe(() => cellDoneChance(2, 2, 0.5)), 1 / 4);
+checkClose("t=3 r=3 p=0.5: 1/8", safe(() => cellDoneChance(3, 3, 0.5)), 1 / 8);
+
+// 2. p not 0.5, so swapping p and 1 - p is caught. t = 4, r = 2, p = 0.1:
+//    exactly 2: C(4,2) x 0.01 x 0.81 = 6 x 0.0081 = 0.0486
+//    exactly 3: C(4,3) x 0.001 x 0.9 = 4 x 0.0009 = 0.0036
+//    exactly 4: 0.0001
+//    sum = 0.0523 (also 1 - 0.9^4 - 4 x 0.1 x 0.9^3 = 1 - 0.6561 - 0.2916).
+//    Exact fraction check (Python, fractions): 523/10000.
+//    With p and 1 - p swapped it would be 0.9963.
+checkClose("t=4 r=2 p=0.1: 0.0523", safe(() => cellDoneChance(4, 2, 0.1)), 0.0523);
+
+// 3. Big coefficients: t = 85, r = 43, p = 0.5. 85 is odd, so "43 or more
+//    heads" and "42 or fewer" are mirror images and each is exactly 1/2.
+//    Needs C(85, 43) ~ 10^24; 85! (~10^128) would be far too big.
+checkClose("t=85 r=43 p=0.5: exactly 1/2 by symmetry", safe(() => cellDoneChance(85, 43, 0.5)), 0.5);
+
+// 4. The arithmetic trap (spec): t = 85, r = 6, p = 1.4e-6.
+//    By hand, the first term is nearly all of it:
+//      C(85,6) = 85x84x83x82x81x80 / 720 = 437,353,560
+//      p^6 = 1.4^6 x 10^-36 = 7.5295e-36;  (1 - p)^79 = 0.99989
+//      437,353,560 x 7.5295e-36 x 0.99989 = 3.2928e-27
+//    (the next term is 79/7 x p = 1.6e-5 times smaller). Exact fraction
+//    check (Python): 3.292757e-27. "1 - P(fewer than 6)" gives about
+//    3.3e-15 or 0, which relClose rejects (see the checkThrows section).
+checkRelClose("t=85 r=6 p=1.4e-6: 3.2928e-27 (tiny, within 0.1%)", safe(() => cellDoneChance(85, 6, 1.4e-6)), 3.292757e-27, 0.001);
+
+// 5. Edges.
+check("r > t: can't have 4 hits in 3 years -> 0", safe(() => cellDoneChance(3, 4, 0.5)), 0);
+check("t = 0: no years, no hits -> 0", safe(() => cellDoneChance(0, 1, 0.5)), 0);
+check("p = 0: never a hit -> 0", safe(() => cellDoneChance(10, 2, 0)), 0);
+check("p = 1, t = 3, r = 3: a hit every year -> 1", safe(() => cellDoneChance(3, 3, 1)), 1);
+check("p = 1, t = 2, r = 3: only 2 years -> 0", safe(() => cellDoneChance(2, 3, 1)), 0);
+
+// 6. Inputs it must refuse (same rules and words as simulatePopulation).
+checkThrows("t = -1", () => cellDoneChance(-1, 2, 0.5), "t (years) must be a whole number >= 0");
+checkThrows("t = 2.5", () => cellDoneChance(2.5, 2, 0.5), "t (years) must be a whole number >= 0");
+checkThrows("r = 0", () => cellDoneChance(3, 0, 0.5), "r (hits) must be");
+checkThrows("r = 1.5", () => cellDoneChance(3, 1.5, 0.5), "r (hits) must be");
+checkThrows("p = -0.1", () => cellDoneChance(3, 2, -0.1), "p must be a number from 0 to 1");
+checkThrows("p = 1.5", () => cellDoneChance(3, 2, 1.5), "p must be a number from 0 to 1");
+checkThrows("p = NaN", () => cellDoneChance(3, 2, NaN), "p must be a number from 0 to 1");
+
+// ---------------------------------------------------------------------------
+console.log("\nexpectedRates");
+
+// expectedRates(N, r, p): the exact rate in each of the 17 groups, no random
+// numbers (spec: THE EXACT ANSWER). S(t) = chance a person is cancer-free at
+// the start of age t; F(t) = 1 - S(t). For group g..g+4:
+//   casesPerPerson = F(g+5) - F(g)   (from F, not S: spec arithmetic trap)
+//   personYearsPerPerson = S(g) + S(g+1) + ... + S(g+4)
+//   rate = cases / person-years, null when person-years = 0.
+// Expected numbers: by hand, and checked with exact fractions in Python.
+
+// 1. Same shape and labels as ageGroupRates: 17 groups, 0-4 ... 80-84.
+{
+  const groups = safe(() => expectedRates(1, 2, 0.5));
+  check("17 groups", groups.length, 17);
+  check("labels 0-4, 5-9, ..., 80-84",
+    Array.isArray(groups) && groups.map((g) => `${g.start}-${g.end}`).join(","),
+    Array.from({ length: 17 }, (_, i) => `${5 * i}-${5 * i + 4}`).join(","));
+}
+
+// 2. Spec hand check 5: N = 1, r = 2, p = 0.5. S(0..5) = 1, 1, 3/4, 1/2, 5/16, 3/16.
+//    Group 0-4: cases 1 - 3/16 = 13/16; person-years 1+1+3/4+1/2+5/16 = 57/16;
+//    rate 13/57 = 0.22807. Group 5-9: cases 181/1024, person-years 53/128,
+//    rate 181/424 = 0.42689.
+{
+  const groups = safe(() => expectedRates(1, 2, 0.5));
+  const [g0, g5] = Array.isArray(groups) ? groups : [{}, {}];
+  checkClose("N=1 r=2 p=0.5, 0-4: cases per person 13/16", g0.casesPerPerson, 13 / 16);
+  checkClose("N=1 r=2 p=0.5, 0-4: person-years 57/16", g0.personYearsPerPerson, 57 / 16);
+  checkClose("N=1 r=2 p=0.5, 0-4: rate 13/57", g0.rate, 13 / 57);
+  checkClose("N=1 r=2 p=0.5, 5-9: cases per person 181/1024", g5.casesPerPerson, 181 / 1024);
+  checkClose("N=1 r=2 p=0.5, 5-9: person-years 53/128", g5.personYearsPerPerson, 53 / 128);
+  checkClose("N=1 r=2 p=0.5, 5-9: rate 181/424", g5.rate, 181 / 424);
+}
+
+// 3. N cells multiply: N = 2, same r and p. S(t) = (one cell's S)^2:
+//    S(0..5) = 1, 1, 9/16, 1/4, 25/256, 9/256.
+//    Cases 1 - 9/256 = 247/256; person-years (256+256+144+64+25)/256 = 745/256;
+//    rate 247/745 = 0.33154. (Ignoring N would give 13/57 again.)
+{
+  const g0 = safe(() => expectedRates(2, 2, 0.5)[0]);
+  checkClose("N=2 r=2 p=0.5, 0-4: cases per person 247/256", g0.casesPerPerson, 247 / 256);
+  checkClose("N=2 r=2 p=0.5, 0-4: person-years 745/256", g0.personYearsPerPerson, 745 / 256);
+  checkClose("N=2 r=2 p=0.5, 0-4: rate 247/745", g0.rate, 247 / 745);
+}
+
+// 4. Spec hand check 3: r = 1, N = 1, p = 0.1. One hit is cancer, so each
+//    year a cancer-free person gets it with chance 0.1: rate 0.1 in EVERY group.
+{
+  const groups = safe(() => expectedRates(1, 1, 0.1));
+  const rates = Array.isArray(groups) ? groups.map((g) => g.rate) : [];
+  check("r=1 p=0.1: 17 rates", rates.length, 17);
+  check("r=1 p=0.1: every rate 0.1 (within 1e-9)", rates.length === 17 && rates.every((x) => Math.abs(x - 0.1) < 1e-9), true);
+}
+
+// 5. p = 0: nobody gets cancer. Every group: 0 cases, 5 person-years, rate 0.
+{
+  const groups = safe(() => expectedRates(100, 4, 0));
+  check("p=0: every group 0 cases, 5 person-years, rate 0",
+    Array.isArray(groups) && groups.every((g) => g.casesPerPerson === 0 && g.personYearsPerPerson === 5 && g.rate === 0), true);
+}
+
+// 6. p = 1, r = 3: everyone gets cancer at age 2 (hits at ages 0, 1, 2).
+//    Group 0-4: 1 case, person-years 3 (ages 0, 1, 2), rate 1/3.
+//    Later groups: nobody left at risk -> 0 cases, 0 person-years, rate null.
+{
+  const groups = safe(() => expectedRates(1, 3, 1));
+  const [g0, ...rest] = Array.isArray(groups) ? groups : [{}];
+  check("p=1 r=3, 0-4: 1 case per person", g0.casesPerPerson, 1);
+  check("p=1 r=3, 0-4: 3 person-years", g0.personYearsPerPerson, 3);
+  checkClose("p=1 r=3, 0-4: rate 1/3", g0.rate, 1 / 3);
+  check("p=1 r=3, 5-9 ... 80-84: 0 person-years, rate null",
+    rest.length === 16 && rest.every((g) => g.personYearsPerPerson === 0 && g.rate === null), true);
+}
+
+// 7. The arithmetic trap, realistic sizes: N = 1e8 cells, r = 6, p = 1.4e-6.
+//    Group 80-84 from Python with exact fractions and 80-digit decimals:
+//    cases per person 1.030331e-19, rate 2.060662e-20. Computing the top as
+//    S(80) - S(85) gives 0 here (both are 0.99999... to 16 digits).
+{
+  const g80 = safe(() => expectedRates(1e8, 6, 1.4e-6)[16]);
+  checkRelClose("N=1e8 r=6 p=1.4e-6, 80-84: cases per person 1.0303e-19", g80.casesPerPerson, 1.030331e-19, 0.001);
+  checkRelClose("N=1e8 r=6 p=1.4e-6, 80-84: rate 2.0607e-20", g80.rate, 2.060662e-20, 0.001);
+}
+
+// 8. No negative cases or rates anywhere, even where nearly everyone already
+//    has cancer and S is rounding noise (decided 2026-11-07: S below 1e-12 -> 0,
+//    F -> 1). Found by test 6: before the fix, p = 1, r = 3 gave group 10-14
+//    cases -2.2e-16 and rate -2. Several settings, so one lucky case can't pass.
+{
+  const settings = [[1, 3, 1], [1, 1, 1], [5, 10, 1], [1, 2, 0.5], [3, 4, 0.9], [100, 4, 0.005]];
+  for (const [N, r, p] of settings) {
+    const groups = safe(() => expectedRates(N, r, p));
+    check(`N=${N} r=${r} p=${p}: no negative cases, no negative rate`,
+      Array.isArray(groups) && groups.every((g) => g.casesPerPerson >= 0 && (g.rate === null || g.rate >= 0)), true);
+  }
+}
+
+// 9. The cutoff only removes noise: a real tiny S above 1e-12 is kept.
+//    N = 1, r = 2, p = 0.5, age 40: S = P(at most 1 head in 40 flips)
+//    = (1 + 40) / 2^40 = 41 / 1,099,511,627,776 = 3.73e-11 (above 1e-12).
+//    Group 40-44 person-years starts with S(40), so it must be > 3.7e-11.
+{
+  const g40 = safe(() => expectedRates(1, 2, 0.5)[8]);
+  check("real S of 3.7e-11 at age 40 is kept (person-years > 3.7e-11)", g40.personYearsPerPerson > 3.7e-11, true);
+}
+
+// 10. The flat-rate case end to end, as runReport will use it: r = 1 rates
+//     for groups 25-29 ... 80-84 (all 0.1, off in the 13th digit) through
+//     logLogFit. Before 2026-11-07 this gave R squared 0.61; flat -> 1, slope 0.
+{
+  const groups = safe(() => expectedRates(1, 1, 0.1).slice(5));
+  const f = safe(() => logLogFit(groups.map((g) => g.start + 2), groups.map((g) => g.rate)));
+  checkClose("r=1 p=0.1 through logLogFit: slope 0", f.slope, 0);
+  check("r=1 p=0.1 through logLogFit: R squared 1 (was 0.61)", f.rSquared, 1);
+  check("r=1 p=0.1 through logLogFit: note explains the 1", typeof f.note === "string" && f.note.length > 0, true);
+}
+
+// 11. Inputs it must refuse (same words as simulatePopulation).
+checkThrows("N = 0", () => expectedRates(0, 2, 0.5), "N (cells) must be");
+checkThrows("N = 2.5", () => expectedRates(2.5, 2, 0.5), "N (cells) must be");
+checkThrows("r = 0", () => expectedRates(1, 0, 0.5), "r (hits) must be");
+checkThrows("p = 1.5", () => expectedRates(1, 2, 1.5), "p must be a number from 0 to 1");
 
 // ---------------------------------------------------------------------------
 console.log(`\n${passed} passed, ${failed} failed`);

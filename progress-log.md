@@ -311,3 +311,38 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
 3. expectedRates: tests (13/57, 181/424, p = 0, p = 1, r = 1, tiny case),
    flat-rate tolerance decision at the r = 1 test, function, planted bugs.
 4. zScores, runReport. Checkpoint Nov 10; first version on the web by Nov 20.
+
+## 2026-11-07: cellDoneChance, expectedRates, flat-rate threshold
+
+- Pace: Cameron asked to move at double speed (whole function per step:
+  tests, code, planted bugs), with the schedule in mind (deploy ~Nov 16-17,
+  web deadline Nov 20; v2 and v3 not started).
+- Built cellDoneChance(t, r, p) = P(Binomial(t, p) >= r), summed from the top,
+  C(t, j) built step by step. 19 checks: coin cases 4/8, 7/8, 1/4, 1/8;
+  t=4 r=2 p=0.1 -> 0.0523 (exact 523/10000); t=85 r=43 p=0.5 -> 1/2 by
+  symmetry; the trap case 3.2928e-27 (hand, and exact Python fractions).
+  New helper checkRelClose: checkClose's 1e-9 would accept 0 for 3.3e-27.
+  Planted bugs: 8 of 9 caught; the 9th (removing the r > t shortcut) changes
+  nothing, since C(t, t+1) comes out as 0. The trap bug is caught ONLY by the
+  tiny-number test. My first run wrongly planted 2 bugs in simulatePopulation
+  (same text earlier in the file); caught by reading which tests failed.
+- Built expectedRates(N, r, p): S and F for ages 0-85, top from F, same shape
+  as ageGroupRates. Checks: 13/57, 181/424 (spec), N=2 -> 247/745, r=1 -> 0.1
+  everywhere, p=0, p=1 edges, the 1e-19 trap case (Python, 80-digit decimals).
+- Bug found by the p = 1 test: the mirror image of the trap. q came out as
+  0.9999999999999999 (or 1.0000000000000002), so S = 1 - q became noise; group
+  10-14 got rate -2 (or NaN). Happens even at p = 0.5 at old ages.
+  DECIDED (Cameron, option B, "simpler, minimal losses"): cap q at 1; S below
+  1e-12 -> 0 and F -> 1. Measured noise 8.9e-16, so 1e-12 is ~1,000x above it.
+  Tests: no negative cases/rates in 6 settings; a real S of 3.7e-11 is kept.
+  11 planted bugs, all caught.
+- Flat-rate tolerance DECIDED (Cameron): fitLine treats y values within 1e-9
+  as flat (R squared 1 with note). r = 1 rates through logLogFit gave R squared
+  0.61 before; log noise ~8e-12. Tests pin it from both sides (spread 2e-9 is
+  still a real fit, R squared 0.25). 3 planted bugs, all caught.
+- 202 tests, all pass.
+
+### Next steps
+1. zScores, runReport (v1 done after these).
+2. Decide what the Nov 20 web version must include (check course/guidelines.md).
+3. v2: the carcinogen (answers the research question). v3: the page.
