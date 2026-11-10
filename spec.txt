@@ -68,6 +68,10 @@ THE MODEL (v1)
    log(rate) vs log(middle age of the group), using the groups from 25-29 to
    80-84 (A&D used 25-74; CI5 goes to 85+). Groups with 0 cases are skipped,
    since log(0) does not exist.
+   Middle age = start + 2.5 (27.5, 32.5, ..., 82.5; DECIDED 2026-11-09):
+   "age 25" is the year from the 25th to the 26th birthday, so group 25-29
+   covers 25.0 to 30.0, like CI5's groups. Using 27 instead (the middle of
+   the labels) tilts the line: exact slope 2.811 instead of 2.841.
 
 7. Random numbers come from a seeded generator: the same seed gives the exact
    same people every time, so a test can be repeated. (JavaScript's built-in
@@ -93,6 +97,16 @@ THE MODEL (v1)
    - Colors: |z| < 2 plain (normal noise), 2 to 3 yellow (worth a look; with
      17 groups about 1 yellow is expected by chance), over 3 red. No green:
      z near 0 is not "better" than z = 1.5, both are noise.
+   - Expected 0 cases in a group (e.g. 0-4 when r = 6): z = null, shown as
+     "expected 0"; if the simulation had cases there anyway, "impossible:
+     expected 0" in red (a bug). DECIDED 2026-11-09.
+   - Fewer than 10 expected cases: z shown but marked "few cases" and not
+     colored. DECIDED 2026-11-09 from a measurement: small counts are
+     lopsided, so a correct simulation is yellow/red too often (expected 0.5:
+     yellow 4x, red 11x as often as the bell curve says) and can never go
+     below z = -3 (expected 2: lowest z -1.41). From 10 up, yellow is within
+     1.2x of the bell curve and z can reach -3.16. In the default run this
+     flags 0-4 ... 20-24, the groups already left out of the slope.
    - A z-vs-age plot, so a pattern across groups is visible (e.g. every old
      age group at z = +1.5: each one looks fine, but together the curve bends).
    - When every rate is the same, fitLine sets R squared to 1 (0/0 otherwise)
@@ -281,3 +295,25 @@ DECISIONS FOR CAMERON (OK the default, or change it)
 4. Rate formula: DECIDED, exact person-years.
 5. Tolerance: DECIDED. Each run reports slope, R squared and z-scores
    (MODEL item 8); the tests' pass lines are measured over 20 seeds.
+
+
+LIMITATIONS (for the README, the video and the discussion; Cameron asked to
+collect these, 2026-11-09)
+------------------------------------------------------------------------
+1. Real numbers give almost no cancer (see HAND CHECK 8). With about 1e8
+   cells and a real mutation rate of 1.4e-6 per year, r = 6 gives a chance of
+   cancer by 85 of 3.3e-19, while real lifetime risks are a few percent. The
+   simulation uses a scaled-up stand-in (N = 100, p = 0.005) that reproduces
+   only the curve's shape. Next step: cells that divide (Luebeck & Moolgavkar
+   2002).
+
+2. No childhood cancer (found 2026-11-09). With r hits needed, nobody can get
+   cancer before age r - 1: with r = 6 or 7 (the range for adult lung
+   cancer), group 0-4 has expected cases exactly 0, because 6 hits need at
+   least 6 years. Real children do get cancer. Childhood cancers fit models
+   with FEWER hits: Knudson's two-hit model of retinoblastoma (1971), an eye
+   cancer of young children, where the first hit can be inherited. Our model
+   uses one r for everyone, born with 0 hits. Next steps: let some people be
+   born with hits already (inherited), or use a smaller r for other cancers.
+   (In the report this shows as z = null, "expected 0" in group 0-4; a
+   simulated case there would be a bug and is marked red.)

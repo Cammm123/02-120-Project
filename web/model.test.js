@@ -2,7 +2,7 @@
 // Every expected number below was worked out by hand (or by a separate,
 // differently written program) rather than copied from model.js output.
 
-const { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates } = require("./model.js");
+const { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates, zScores, summarizeZ, runReport } = require("./model.js");
 
 let passed = 0;
 let failed = 0;
@@ -563,7 +563,7 @@ console.log("\nlogLogFit");
 // For rate = c x age^k the logs give  log(rate) = log(c) + k log(age):
 // slope k, intercept log(c).
 
-// The 12 group middles from 25-29 to 80-84: 27, 32, ..., 82.
+// Made-up ages, 5 apart: 27, 32, ..., 82 (any positive ages work here).
 const middles = Array.from({ length: 12 }, (_, i) => 27 + 5 * i);
 
 // 1. rate = age^3 (c = 1): slope exactly 3, intercept log(1) = 0, R squared 1.
@@ -822,6 +822,200 @@ checkThrows("N = 0", () => expectedRates(0, 2, 0.5), "N (cells) must be");
 checkThrows("N = 2.5", () => expectedRates(2.5, 2, 0.5), "N (cells) must be");
 checkThrows("r = 0", () => expectedRates(1, 0, 0.5), "r (hits) must be");
 checkThrows("p = 1.5", () => expectedRates(1, 2, 1.5), "p must be a number from 0 to 1");
+
+// ---------------------------------------------------------------------------
+console.log("\nzScores");
+
+// zScores(simulated, expected, M): for each age group,
+//   expectedCases = M x casesPerPerson,  z = (simulated - expected) / sqrt(expected)
+// plus a note (decided 2026-11-09):
+//   expected 0 -> z null, note "expected 0" (or "impossible: expected 0" if
+//                 the simulation had cases anyway: a bug, shown red);
+//   expected < 10 -> z kept, note "few cases" (z unreliable: measured, small
+//                 counts give yellow/red too often and can't go below -3).
+// Small made-up groups so every number is easy by hand. M = 1,000 people.
+
+/** Made-up simulated groups (only start, end, cases matter). */
+function simGroups(casesList) {
+  return casesList.map((cases, i) => ({ start: 5 * i, end: 5 * i + 4, cases }));
+}
+/** Made-up expected groups (only start, end, casesPerPerson matter). */
+function expGroups(perPersonList) {
+  return perPersonList.map((c, i) => ({ start: 5 * i, end: 5 * i + 4, casesPerPerson: c }));
+}
+
+// 1. The spec's example: expected 100 (1,000 x 0.1).
+//    Got 130: z = 30 / sqrt(100) = 30 / 10 = 3.   Got 100: z = 0.
+//    Got 80: z = -20 / 10 = -2 (the sign is kept: too FEW cases).
+{
+  const z = safe(() => zScores(simGroups([130, 100, 80]), expGroups([0.1, 0.1, 0.1]), 1000));
+  check("expected 100, got 130: expectedCases 100", z[0] && z[0].expectedCases, 100);
+  checkClose("expected 100, got 130: z = 3", z[0] && z[0].z, 3);
+  checkClose("expected 100, got 100: z = 0", z[1] && z[1].z, 0);
+  checkClose("expected 100, got 80: z = -2 (sign kept)", z[2] && z[2].z, -2);
+  check("expected 100: no note", [z[0] && z[0].note, z[2] && z[2].note], [null, null]);
+  check("labels and simulated cases carried through", z[0] && [z[0].start, z[0].end, z[0].simulatedCases], [0, 4, 130]);
+}
+
+// 2. M really is used: same groups, M = 4,000 -> expected 400, got 440:
+//    z = 40 / 20 = 2.
+{
+  const z = safe(() => zScores(simGroups([440]), expGroups([0.1]), 4000));
+  checkClose("M = 4,000: expected 400, got 440: z = 2", z[0] && z[0].z, 2);
+}
+
+// 3. Few cases: expected 4 (1,000 x 0.004), got 6: z = 2 / 2 = 1, note "few cases".
+//    Boundary: expected exactly 10 is NOT few; 9.99 is.
+{
+  const z = safe(() => zScores(simGroups([6, 10, 10]), expGroups([0.004, 0.01, 0.00999]), 1000));
+  checkClose("expected 4, got 6: z = 1", z[0] && z[0].z, 1);
+  check("expected 4: note 'few cases'", z[0] && z[0].note, "few cases");
+  check("expected exactly 10: not few", z[1] && z[1].note, null);
+  check("expected 9.99: few", z[2] && z[2].note, "few cases");
+}
+
+// 4. Expected exactly 0 (like group 0-4 when r = 6: 6 hits in 5 years is
+//    impossible). Got 0 -> z null, "expected 0". Got 2 -> z null,
+//    "impossible: expected 0" (a bug somewhere; the report shows it red).
+{
+  const z = safe(() => zScores(simGroups([0, 2]), expGroups([0, 0]), 1000));
+  check("expected 0, got 0: z null", z[0] && z[0].z, null);
+  check("expected 0, got 0: note 'expected 0'", z[0] && z[0].note, "expected 0");
+  check("expected 0, got 2: z null", z[1] && z[1].z, null);
+  check("expected 0, got 2: note 'impossible: expected 0'", z[1] && z[1].note, "impossible: expected 0");
+}
+
+// 5. Real groups line up: ageGroupRates and expectedRates both give the 17
+//    groups 0-4 ... 80-84, so zScores accepts them and returns 17 z's.
+{
+  const sim = ageGroupRates([{ ageAtCancer: 30 }, { ageAtCancer: null }]);
+  const z = safe(() => zScores(sim, expectedRates(1, 2, 0.5), 2));
+  check("real ageGroupRates + expectedRates: 17 results", Array.isArray(z) && z.length, 17);
+}
+
+// 6. Inputs it must refuse: groups that don't line up would compare the
+//    wrong ages, silently.
+checkThrows("different numbers of groups", () => zScores(simGroups([1, 2]), expGroups([0.1]), 1000), "same number of age groups");
+checkThrows("labels don't match (0-4 vs 5-9)",
+  () => zScores(simGroups([1]), [{ start: 5, end: 9, casesPerPerson: 0.1 }], 1000), "age groups don't line up");
+checkThrows("M = 0", () => zScores(simGroups([1]), expGroups([0.1]), 0), "M (people) must be");
+checkThrows("M = 2.5", () => zScores(simGroups([1]), expGroups([0.1]), 2.5), "M (people) must be");
+
+// ---------------------------------------------------------------------------
+console.log("\nsummarizeZ");
+
+// summarizeZ(zGroups): over the groups used for the slope (25-29 and up) whose
+// z is reliable (a number, no note): the largest |z| WITH its sign and group,
+// and the sum of z^2 (spec item 10: catches every z small but all leaning the
+// same way; noise alone gives about the number of groups).
+
+// 1. Made-up groups, by hand:
+//    20-24 z 5          -> left out (under 25)
+//    25-29 z 1          -> in: 1^2    = 1
+//    30-34 z -2.5       -> in: 2.5^2  = 6.25   <- largest |z|, and it's negative
+//    35-39 z 0.5        -> in: 0.5^2  = 0.25
+//    40-44 z 4 "few"    -> left out (unreliable)
+//    45-49 null         -> left out (expected 0)
+//    sum = 7.5 over 3 groups; largest = -2.5 at 30-34 (not 5, not 4).
+{
+  const groups = [
+    { start: 20, end: 24, z: 5, note: null },
+    { start: 25, end: 29, z: 1, note: null },
+    { start: 30, end: 34, z: -2.5, note: null },
+    { start: 35, end: 39, z: 0.5, note: null },
+    { start: 40, end: 44, z: 4, note: "few cases" },
+    { start: 45, end: 49, z: null, note: "expected 0" },
+  ];
+  const s = safe(() => summarizeZ(groups));
+  check("largest |z|: -2.5 at 30-34, sign kept", s.largest, { z: -2.5, start: 30, end: 34 });
+  checkClose("sum of z^2: 1 + 6.25 + 0.25 = 7.5", s.sumZ2, 7.5);
+  check("3 groups in the sum", s.groupsInSum, 3);
+}
+
+// 2. The hidden bend from spec item 10: 12 groups all at z = +1.5. No single
+//    group is yellow, but sum of z^2 = 12 x 2.25 = 27, versus about 12 for noise.
+{
+  const groups = Array.from({ length: 12 }, (_, i) => ({ start: 25 + 5 * i, end: 29 + 5 * i, z: 1.5, note: null }));
+  const s = safe(() => summarizeZ(groups));
+  checkClose("12 groups at z = 1.5: sum of z^2 = 27", s.sumZ2, 27);
+}
+
+// 3. Nothing usable: largest null, sum 0, 0 groups.
+{
+  const s = safe(() => summarizeZ([{ start: 10, end: 14, z: 2, note: null }, { start: 30, end: 34, z: null, note: "expected 0" }]));
+  check("nothing usable: largest null, sum 0, 0 groups", [s.largest, s.sumZ2, s.groupsInSum], [null, 0, 0]);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nrunReport");
+
+// runReport(M, N, r, p, seed) puts it all together: simulate, ageGroupRates,
+// expectedRates, zScores, logLogFit on groups 25-29 ... 80-84 (middle ages
+// 27.5, 32.5, ..., 82.5) for both the simulated and the exact rates, summarizeZ.
+
+// 1. The exact slope for the defaults is the spec's 2.84 (worked out
+//    2026-10-09 with a separate program), close to but below r - 1 = 3.
+{
+  const rep = safe(() => runReport(2000, 100, 4, 0.005, 1));
+  checkBetween("defaults: exact slope 2.84 (spec)", rep.exactFit && rep.exactFit.slope, 2.835, 2.845);
+}
+
+// 2. Same seed -> exactly the same report; a different seed -> different people.
+{
+  const a = safe(() => JSON.stringify(runReport(2000, 100, 4, 0.005, 7)));
+  const b = safe(() => JSON.stringify(runReport(2000, 100, 4, 0.005, 7)));
+  const c = safe(() => runReport(2000, 100, 4, 0.005, 8));
+  const aCases = safe(() => JSON.parse(a).groups.map((g) => g.simulatedCases).join());
+  check("same seed: identical report", a === b && a.length > 100, true);
+  check("different seed: different cases", Array.isArray(c.groups) && c.groups.map((g) => g.simulatedCases).join() !== aCases, true);
+}
+
+// 3. Wired to the right pieces: the report's simulated cases are exactly what
+//    ageGroupRates gives for the same people (same seed).
+{
+  const rep = safe(() => runReport(2000, 100, 4, 0.005, 3));
+  const direct = ageGroupRates(simulatePopulation(2000, 100, 4, 0.005, 3)).map((g) => g.cases);
+  check("simulated cases match ageGroupRates(simulatePopulation(...))",
+    Array.isArray(rep.groups) && rep.groups.map((g) => g.simulatedCases).join(), direct.join());
+  check("the summary is summarizeZ of the report's groups", rep.zSummary, safe(() => summarizeZ(rep.groups)));
+}
+
+// 4. p = 1, r = 3, M = 50: everyone gets cancer at age 2, by hand.
+//    Group 0-4: 50 simulated, 50 expected, z = 0 / sqrt(50) = 0.
+//    Groups 5-9 and up: nobody left: 0 simulated, 0 expected -> "expected 0";
+//    left out of the slope: under 25 (0-24), nobody at risk (25 and up).
+//    No group 25+ has cases, so there is no simulated or exact slope.
+{
+  const rep = safe(() => runReport(50, 10, 3, 1, 1));
+  const g = Array.isArray(rep.groups) ? rep.groups : [];
+  check("p=1 r=3: 0-4 has 50 simulated, 50 expected", g[0] && [g[0].simulatedCases, g[0].expectedCases], [50, 50]);
+  checkClose("p=1 r=3: 0-4 z = 0", g[0] && g[0].z, 0);
+  check("p=1 r=3: groups 5-84 all 'expected 0'", g.length === 17 && g.slice(1).every((x) => x.note === "expected 0"), true);
+  check("p=1 r=3: left out as 'under 25' for 0-24",
+    g.slice(0, 5).map((x) => x.leftOutReason).join(), "under 25,under 25,under 25,under 25,under 25");
+  check("p=1 r=3: left out as 'nobody at risk' for 25-84",
+    g.length === 17 && g.slice(5).every((x) => x.leftOutReason === "nobody at risk"), true);
+  check("p=1 r=3: no simulated slope, with a reason", [rep.simulatedFit, typeof rep.simulatedFitProblem], [null, "string"]);
+  check("p=1 r=3: no exact slope, with a reason", [rep.exactFit, typeof rep.exactFitProblem], [null, "string"]);
+}
+
+// 5. Small M = 300 with the defaults: young groups 25+ have expected < 1
+//    case (25-29: 16.3 / 20,000 x 300 = 0.24), so some have 0 simulated
+//    cases. Every group 25+ with people at risk is either in the slope (has
+//    cases) or left out as "0 cases", and the fit used exactly the in-slope ones.
+{
+  const rep = safe(() => runReport(300, 100, 4, 0.005, 1));
+  const g = Array.isArray(rep.groups) ? rep.groups.slice(5) : [];
+  check("M=300: some group 25+ has 0 cases (so the test means something)", g.some((x) => x.simulatedCases === 0), true);
+  check("M=300: 0 cases -> left out as '0 cases'; else in the slope",
+    g.length === 12 && g.every((x) => (x.simulatedCases === 0 ? x.leftOutReason === "0 cases" && !x.inSlope : x.inSlope && x.leftOutReason === null)), true);
+  check("M=300: simulated fit used exactly the in-slope groups",
+    rep.simulatedFit && rep.simulatedFit.used, g.filter((x) => x.inSlope).length);
+}
+
+// 6. Bad inputs are refused (by simulatePopulation, same words).
+checkThrows("p = 1.5", () => runReport(100, 100, 4, 1.5, 1), "p must be a number from 0 to 1");
+checkThrows("M = 0", () => runReport(0, 100, 4, 0.005, 1), "M (people) must be");
 
 // ---------------------------------------------------------------------------
 console.log(`\n${passed} passed, ${failed} failed`);

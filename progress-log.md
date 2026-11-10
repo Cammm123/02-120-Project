@@ -346,3 +346,42 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
 1. zScores, runReport (v1 done after these).
 2. Decide what the Nov 20 web version must include (check course/guidelines.md).
 3. v2: the carcinogen (answers the research question). v3: the page.
+
+## 2026-11-09: zScores, runReport, report.js (v1 code complete)
+
+- Schedule notes: TA check-in window (5%) closes Nov 13; the course journal
+  page lists a checkpoint Nov 10, course/guidelines.md says Nov 20.
+- zScores(simulated, expected, M): z = (sim - M x casesPerPerson) / sqrt(...),
+  sign kept. DECIDED (Cameron): expected 0 -> z null, "expected 0" (red
+  "impossible" if cases appeared anyway); "few cases" below 10 expected.
+  10 was MEASURED, not the usual rule of thumb 5: small counts are lopsided
+  (expected 0.5: yellow 4x, red 11x the bell-curve rate) and can't go below
+  z = -3 (expected 2: lowest -1.41); from 10 up yellow is 1.2x and z reaches
+  -3.16. 20 checks, 10 planted bugs caught ("M ignored" caught only by the
+  one M = 4,000 test: the hardcoded-answer trap).
+- Cameron asked: "if z is null, can't a young kid slip through?" No: z only
+  compares counts after the simulation; with r = 6, cancer before age 5 is
+  impossible in the simulation itself, and a case there would show red.
+  Real children DO get cancer: new LIMITATIONS section in spec.txt (no
+  childhood cancer; Knudson's two-hit retinoblastoma, 1971), plus the
+  real-numbers limitation from HAND CHECK 8.
+- summarizeZ: largest |z| with sign and group, sum of z^2 (Cameron: include
+  it). By hand: z 1, -2.5, 0.5 -> 7.5; 12 groups at +1.5 -> 27.
+- runReport: simulate, compare, fit both lines; each group says why it is
+  left out of the slope; a fit is null with a reason instead of crashing.
+- Mistake found by the spec's 2.84 test: I had used middle age 27 for group
+  25-29 (exact slope 2.811). The Oct 9 script (found in journal/) used 27.5.
+  DECIDED (Cameron): start + 2.5, since group 25-29 covers ages 25.0-30.0,
+  like CI5. Exact slope now 2.841. Spec item 6 updated. 9 planted bugs caught.
+- report.js: `node report.js [M N r p seed]` prints the table with colors,
+  z bars, notes, slopes and the summary. Default run: simulated slope 2.762
+  vs exact 2.841; sum z^2 20.9 (looked high). 10 seeds: sum z^2 averages
+  13.0 (noise ~12), so seed 1 was unlucky. Simulated slopes 2.48-3.06,
+  average 2.764: 0.08 below exact, about 1.4 standard errors. WATCH in the
+  20-seed check.
+- 244 tests, all pass.
+
+### Next steps
+1. HAND CHECK 6 and 7: 20 seeds, measure the spread of the slope and z's,
+   set the pass line, check whether the simulated slope leans below 2.841.
+2. Decide what the Nov 20 web version must include; then v2 (carcinogen).

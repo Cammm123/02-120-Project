@@ -261,5 +261,118 @@ function expectedRates(N, r, p) {
   return groups;
 }
 
+/**
+ * Below this many expected cases, z is unreliable (decided 2026-11-09,
+ * measured): small counts are lopsided, so a correct simulation shows yellow
+ * or red too often, and z can't go below -3 (expected 2 -> lowest z -1.41).
+ * From 10 up, yellow behaves like the bell curve (1.2x) and z can reach -3.16.
+ */
+const FEW_CASES = 10;
+
+/**
+ * Compare simulated and expected case counts in each age group (spec.txt,
+ * MODEL item 8). simulated = ageGroupRates(...), expected = expectedRates(...),
+ * M = number of people simulated. For each group:
+ *   expectedCases = M * casesPerPerson
+ *   z = (simulatedCases - expectedCases) / sqrt(expectedCases), sign kept
+ *   note: null; "few cases" when expectedCases < FEW_CASES (z kept, but
+ *   unreliable); "expected 0" when expectedCases = 0 (z null), or
+ *   "impossible: expected 0" if the simulation had cases there anyway (a bug).
+ * Returns [{ start, end, simulatedCases, expectedCases, z, note }, ...].
+ * Throws if the two lists of groups don't line up, or for a bad M.
+ */
+function zScores(simulated, expected, M) {
+  if (!Number.isInteger(M) || M < 1) throw new Error(`M (people) must be a whole number >= 1, got ${M}`);
+  if (simulated.length !== expected.length) {
+    throw new Error(`simulated and expected must have the same number of age groups, got ${simulated.length} and ${expected.length}`);
+  }
+  return simulated.map((sim, i) => {
+    const exp = expected[i];
+    if (sim.start !== exp.start || sim.end !== exp.end) {
+      throw new Error(`age groups don't line up: ${sim.start}-${sim.end} vs ${exp.start}-${exp.end}`);
+    }
+    const expectedCases = M * exp.casesPerPerson;
+    let z = null;
+    let note = null;
+    if (expectedCases === 0) {
+      note = sim.cases === 0 ? "expected 0" : "impossible: expected 0";
+    } else {
+      z = (sim.cases - expectedCases) / Math.sqrt(expectedCases);
+      if (expectedCases < FEW_CASES) note = "few cases";
+    }
+    return { start: sim.start, end: sim.end, simulatedCases: sim.cases, expectedCases, z, note };
+  });
+}
+
+/** The slope uses age groups starting at this age and up: 25-29 ... 80-84 (spec item 6). */
+const SLOPE_FROM = 25;
+
+/**
+ * Summary of the z's over the groups used for the slope (start >= SLOPE_FROM)
+ * whose z is reliable (a number, no note):
+ *   largest: the z with the largest size, sign kept, and its group, or null;
+ *   sumZ2: the sum of z^2 (spec item 10: noise alone gives about groupsInSum;
+ *          all z's leaning the same way, e.g. every one +1.5, gives much more).
+ * Returns { largest: { z, start, end } | null, sumZ2, groupsInSum }.
+ */
+function summarizeZ(zGroups) {
+  let largest = null;
+  let sumZ2 = 0;
+  let groupsInSum = 0;
+  for (const g of zGroups) {
+    if (g.start < SLOPE_FROM || g.z === null || g.note !== null) continue;
+    sumZ2 += g.z ** 2;
+    groupsInSum++;
+    if (largest === null || Math.abs(g.z) > Math.abs(largest.z)) largest = { z: g.z, start: g.start, end: g.end };
+  }
+  return { largest, sumZ2, groupsInSum };
+}
+
+/**
+ * logLogFit, or a reason there is no slope: fewer than 2 groups with a rate
+ * above 0 would make fitLine throw, which would crash a whole report.
+ */
+function fitOrProblem(ages, rates, which) {
+  const usable = rates.filter((x) => x !== null && x > 0).length;
+  if (usable < 2) return { fit: null, problem: `only ${usable} age group(s) from ${SLOPE_FROM} up with ${which} cases: no slope` };
+  return { fit: logLogFit(ages, rates), problem: null };
+}
+
+/**
+ * One full run, all the numbers (spec.txt, MODEL items 8-10): simulate M
+ * people, compare with the exact rates, and fit the log-log line through the
+ * groups 25-29 ... 80-84 at their middle ages 27.5, 32.5, ..., 82.5 (decided 2026-11-09), once for the
+ * simulated and once for the exact rates.
+ * Each group: zScores' fields plus simulatedRate, expectedRate, inSlope and
+ * leftOutReason (null, "under 25", "nobody at risk" or "0 cases").
+ * Returns { settings, groups, simulatedFit, simulatedFitProblem, exactFit,
+ *   exactFitProblem, zSummary }; a fit is null when there is no slope, and
+ *   its problem says why. Input checks are done by simulatePopulation.
+ */
+function runReport(M, N, r, p, seed) {
+  const simulated = ageGroupRates(simulatePopulation(M, N, r, p, seed));
+  const expected = expectedRates(N, r, p);
+  const groups = zScores(simulated, expected, M).map((g, i) => {
+    let leftOutReason = null;
+    if (g.start < SLOPE_FROM) leftOutReason = "under 25";
+    else if (simulated[i].rate === null) leftOutReason = "nobody at risk";
+    else if (simulated[i].cases === 0) leftOutReason = "0 cases";
+    return { ...g, simulatedRate: simulated[i].rate, expectedRate: expected[i].rate, inSlope: leftOutReason === null, leftOutReason };
+  });
+  const slopeGroups = groups.filter((g) => g.start >= SLOPE_FROM);
+  const middleAges = slopeGroups.map((g) => g.start + 2.5); // group 25-29 covers ages 25.0 to 30.0
+  const sim = fitOrProblem(middleAges, slopeGroups.map((g) => g.simulatedRate), "simulated");
+  const exact = fitOrProblem(middleAges, slopeGroups.map((g) => g.expectedRate), "expected");
+  return {
+    settings: { M, N, r, p, seed },
+    groups,
+    simulatedFit: sim.fit,
+    simulatedFitProblem: sim.problem,
+    exactFit: exact.fit,
+    exactFitProblem: exact.problem,
+    zSummary: summarizeZ(groups),
+  };
+}
+
 // Lets the same file load in the browser (as globals) and in Node (for tests).
-if (typeof module !== "undefined") module.exports = { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates };
+if (typeof module !== "undefined") module.exports = { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates, zScores, summarizeZ, runReport };
