@@ -385,3 +385,43 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
 1. HAND CHECK 6 and 7: 20 seeds, measure the spread of the slope and z's,
    set the pass line, check whether the simulated slope leans below 2.841.
 2. Decide what the Nov 20 web version must include; then v2 (carcinogen).
+
+## 2026-11-10: new graph, then back to the science (slope = r − 1)
+
+- Meeting with Clayton: focus more on the science. My plan is to understand
+  and be able to explain the model first. The app deployment should go fast
+  after that, and it matters less than the understanding.
+- New graph `output/v1-fit.svg` (by `web/plot-fit.js`, any settings): the
+  simulated dots, the fitted line (slope 2.76) and the exact curve (slope
+  2.84) on log-log axes, with the ages used for the slope shaded. By hand:
+  the fitted line at 62.5 = exp(-17.783 + 2.762 ln 62.5) = 172.9 per 100,000.
+  Drawing only, with no tests; every number comes from runReport. Weak spot:
+  the fitted and exact lines nearly overlap, so the 0.08 difference shows only
+  in the legend.
+- Read the Wikipedia page on the Armitage–Doll model; my takeaways and the
+  checks against the primary sources are in `notes/reading-notes.md`.
+  Wikipedia gets two things wrong: "r between 5 and 7" (the paper says slopes
+  ~5–6.5, so 6 or 7 changes), and retinoblastoma "1 or 2" (uncited; Knudson
+  1971 says 2 hits, 0 or 1 inherited). To do: read Knudson 1971 myself.
+- Tutor session, ideas 1 and 2 (pictures and tables in `output/learn/`, by
+  `web/learn-slope.js`):
+  1. On log-log axes, slope k means ×2^k when age doubles. The slope gives the
+     ratio, not the height.
+  2. Only "ready" cells (r − 1 mutations already) can become cancer this
+     year. Each of those r − 1 mutations gives one ×2 per doubling of age, so
+     slope = r − 1. Counting red cells (r = 3): 1.87 → 7.51 → 29.2 at ages
+     20/40/80, ×4.02 then ×3.89.
+- Found on my own: 39 orange cells instead of 40 isn't random. Only gray cells
+  can turn orange, so the pool shrinks and the line flattens a little. That's
+  one reason the exact slope is 2.84, not 3.
+- Mix-up to watch: the power of 2 IS the slope (×32 → slope 5). The ±1 only
+  goes between slope and mutations (slope 5 → 6 mutations). I got it right on
+  the last try (×8 → slope 3 → 4 mutations).
+- My explanation in my own words: `notes/armitage-doll-my-notes.md`.
+
+### Next steps
+1. Topic 3: why the exact slope is 2.84, not 3 (gray cells running out, 100
+   cells per person, people stop counting after the first cancer).
+2. Then topics 4–5 (rates, person-years and z; what a "hit" is biologically).
+3. HAND CHECK 6/7: 20 seeds, pass line, does the simulated slope lean low?
+4. TA check-in closes Nov 13.

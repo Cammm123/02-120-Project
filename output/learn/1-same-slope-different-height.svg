@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480" font-family="Helvetica, Arial, sans-serif">
+<rect width="720" height="480" fill="#fcfcfb"/>
+<text x="24" y="30" font-size="18" font-weight="600" fill="#0b0b0b">Same slope, different height</text>
+<text x="24" y="52" font-size="13" fill="#52514e">Both lines have slope 3. The slope says how fast the rate rises, not where the line sits.</text>
+<line x1="80" y1="80" x2="80" y2="420" stroke="#e6e5e0"/>
+<text x="80" y="440" font-size="12" fill="#52514e" text-anchor="middle">1</text>
+<line x1="171.81414867751425" y1="80" x2="171.81414867751425" y2="420" stroke="#e6e5e0"/>
+<text x="171.81414867751425" y="440" font-size="12" fill="#52514e" text-anchor="middle">2</text>
+<line x1="293.18585132248575" y1="80" x2="293.18585132248575" y2="420" stroke="#e6e5e0"/>
+<text x="293.18585132248575" y="440" font-size="12" fill="#52514e" text-anchor="middle">5</text>
+<line x1="385" y1="80" x2="385" y2="420" stroke="#e6e5e0"/>
+<text x="385" y="440" font-size="12" fill="#52514e" text-anchor="middle">10</text>
+<line x1="530.521982689497" y1="80" x2="530.521982689497" y2="420" stroke="#e6e5e0"/>
+<text x="530.521982689497" y="440" font-size="12" fill="#52514e" text-anchor="middle">30</text>
+<line x1="622.3361313670113" y1="80" x2="622.3361313670113" y2="420" stroke="#e6e5e0"/>
+<text x="622.3361313670113" y="440" font-size="12" fill="#52514e" text-anchor="middle">60</text>
+<line x1="690" y1="80" x2="690" y2="420" stroke="#e6e5e0"/>
+<text x="690" y="440" font-size="12" fill="#52514e" text-anchor="middle">100</text>
+<line x1="80" y1="420" x2="690" y2="420" stroke="#e6e5e0"/>
+<text x="72" y="424" font-size="11" fill="#52514e" text-anchor="end">0.01</text>
+<line x1="80" y1="382.22222222222223" x2="690" y2="382.22222222222223" stroke="#e6e5e0"/>
+<text x="72" y="386.22222222222223" font-size="11" fill="#52514e" text-anchor="end">0.1</text>
+<line x1="80" y1="344.44444444444446" x2="690" y2="344.44444444444446" stroke="#e6e5e0"/>
+<text x="72" y="348.44444444444446" font-size="11" fill="#52514e" text-anchor="end">1</text>
+<line x1="80" y1="306.6666666666667" x2="690" y2="306.6666666666667" stroke="#e6e5e0"/>
+<text x="72" y="310.6666666666667" font-size="11" fill="#52514e" text-anchor="end">10</text>
+<line x1="80" y1="268.8888888888889" x2="690" y2="268.8888888888889" stroke="#e6e5e0"/>
+<text x="72" y="272.8888888888889" font-size="11" fill="#52514e" text-anchor="end">100</text>
+<line x1="80" y1="231.11111111111111" x2="690" y2="231.11111111111111" stroke="#e6e5e0"/>
+<text x="72" y="235.11111111111111" font-size="11" fill="#52514e" text-anchor="end">1,000</text>
+<line x1="80" y1="193.33333333333334" x2="690" y2="193.33333333333334" stroke="#e6e5e0"/>
+<text x="72" y="197.33333333333334" font-size="11" fill="#52514e" text-anchor="end">10,000</text>
+<line x1="80" y1="155.55555555555554" x2="690" y2="155.55555555555554" stroke="#e6e5e0"/>
+<text x="72" y="159.55555555555554" font-size="11" fill="#52514e" text-anchor="end">100,000</text>
+<line x1="80" y1="117.77777777777777" x2="690" y2="117.77777777777777" stroke="#e6e5e0"/>
+<text x="72" y="121.77777777777777" font-size="11" fill="#52514e" text-anchor="end">1,000,000</text>
+<line x1="80" y1="80" x2="690" y2="80" stroke="#e6e5e0"/>
+<text x="72" y="84" font-size="11" fill="#52514e" text-anchor="end">10,000,000</text>
+<text x="385" y="462" font-size="13" fill="#52514e" text-anchor="middle">Age (log scale)</text>
+<text transform="translate(22 250) rotate(-90)" font-size="13" fill="#52514e" text-anchor="middle">Rate (made-up units, log scale)</text>
+<line x1="80" y1="344.44444444444446" x2="690" y2="117.77777777777777" stroke="#2a78d6" stroke-width="2.5"/>
+<circle cx="530.521982689497" cy="177.03736890954937" r="5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"/>
+<text x="522.521982689497" y="167.03736890954937" font-size="12" fill="#2a78d6" text-anchor="end">27,000</text>
+<circle cx="622.3361313670113" cy="142.9206360676315" r="5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"/>
+<text x="614.3361313670113" y="132.9206360676315" font-size="12" fill="#2a78d6" text-anchor="end">216,000</text>
+<text x="114.75272245358522" y="317.5308645163363" font-size="12" fill="#2a78d6">rate = 1 × age³</text>
+<line x1="80" y1="420" x2="690" y2="193.33333333333334" stroke="#d9822b" stroke-width="2.5"/>
+<circle cx="530.521982689497" cy="252.5929244651049" r="5" fill="#d9822b" stroke="#fcfcfb" stroke-width="2"/>
+<text x="522.521982689497" y="242.5929244651049" font-size="12" fill="#d9822b" text-anchor="end">270</text>
+<circle cx="622.3361313670113" cy="218.47619162318705" r="5" fill="#d9822b" stroke="#fcfcfb" stroke-width="2"/>
+<text x="614.3361313670113" y="208.47619162318705" font-size="12" fill="#d9822b" text-anchor="end">2,160</text>
+<text x="114.75272245358522" y="393.08642007189184" font-size="12" fill="#d9822b">rate = 0.01 × age³  (100× lower)</text>
+<text x="682" y="100" font-size="12" fill="#0b0b0b" text-anchor="end">30 → 60: blue 27,000 → 216,000 (×8); orange 270 → 2,160 (×8)</text>
+<text x="682" y="118" font-size="12" fill="#0b0b0b" text-anchor="end">1 → 2 also ×8 on both lines: every doubling of age is ×2³ = ×8</text>
+</svg>

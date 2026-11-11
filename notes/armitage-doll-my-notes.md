@@ -21,3 +21,20 @@ Written by Cameron after the tutor session on 2026-10-07. Page numbers refer to
   Making hits faster never changes which comes first, like a combination lock.
 - **Line 1:** forgot it once. The point is the rate *this year*, not the total
   chance by some age.
+
+## Why r mutations gives slope r − 1 (Cameron's words, 2026-11-10)
+
+After the counting-cells session (pictures in `output/learn/README.md`):
+
+> Cancer rates rise with age because more cells are one step away now, and as
+> age increases, more cells have the opportunity to get cancer.
+>
+> r mutations give slope r − 1 because it needs r − 1 mutations to happen to
+> get to this point. The final r-th mutation happens then, so it doesn't
+> affect the slope at that point.
+>
+> The height of the line doesn't matter because you can figure out the number
+> of mutations from the slope (mutations = slope + 1).
+
+To remember: the height comes from N and p, and the slope comes from r. Each
+mutation a ready cell already has adds one ×2 when age doubles.
