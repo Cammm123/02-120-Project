@@ -243,6 +243,119 @@ function svgStart(W, H, title, subtitle) {
 }
 
 // ---------------------------------------------------------------------------
+// Figure 7: Knudson (1971) Fig. 1 idea, redrawn from the two formulas in his
+// caption (p. 823, log base 10, t in months):
+//   one-hit:  log S = -t/30          two-hit:  log S = -4e-4 t^2
+// S = fraction of children (who will get retinoblastoma) not yet diagnosed at age t.
+// ---------------------------------------------------------------------------
+{
+  const oneHit = (t) => 10 ** (-t / 30);
+  const twoHit = (t) => 10 ** (-4e-4 * t * t);
+  const W = 720, H = 480, left = 80, right = 190, top = 80, bottom = 60;
+  const xMax = 60, yMin = 0.01, yMax = 1;
+  const xp = (t) => left + (t / xMax) * (W - left - right);
+  const yp = (v) => H - bottom - (Math.log10(v) - Math.log10(yMin)) / (Math.log10(yMax) - Math.log10(yMin)) * (H - top - bottom);
+  const s = svgStart(W, H, "Knudson (1971): one more hit vs two hits",
+    "Children who will get retinoblastoma: fraction not yet diagnosed, by age. Redrawn from the formulas in his Fig. 1.");
+  for (let t = 0; t <= 60; t += 10) {
+    s.push(`<line x1="${xp(t)}" y1="${top}" x2="${xp(t)}" y2="${H - bottom}" stroke="${GRID}"/>`);
+    s.push(`<text x="${xp(t)}" y="${H - bottom + 20}" font-size="12" fill="${MUTED}" text-anchor="middle">${t}</text>`);
+  }
+  for (const v of [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]) {
+    s.push(`<line x1="${left}" y1="${yp(v)}" x2="${W - right}" y2="${yp(v)}" stroke="${GRID}"/>`);
+    s.push(`<text x="${left - 8}" y="${yp(v) + 4}" font-size="11" fill="${MUTED}" text-anchor="end">${v}</text>`);
+  }
+  s.push(`<text x="${(left + W - right) / 2}" y="${H - 18}" font-size="13" fill="${MUTED}" text-anchor="middle">Age in months (ordinary scale)</text>`);
+  s.push(`<text transform="translate(22 ${(top + H - bottom) / 2}) rotate(-90)" font-size="13" fill="${MUTED}" text-anchor="middle">Fraction not yet diagnosed, S (log scale)</text>`);
+  for (const [f, color, a, b] of [[oneHit, BLUE, "one hit still needed", "(inherited: both eyes)"], [twoHit, ORANGE, "two hits still needed", "(not inherited: one eye)"]]) {
+    const pts = [];
+    for (let t = 0; t <= 60; t += 0.5) if (f(t) >= yMin) pts.push(`${xp(t).toFixed(1)},${yp(f(t)).toFixed(1)}`);
+    s.push(`<polyline fill="none" stroke="${color}" stroke-width="2.5" points="${pts.join(" ")}"/>`);
+    const tEnd = Math.min(60, f === oneHit ? 60 : 60);
+    const yEnd = Math.max(f(tEnd), yMin);
+    s.push(`<text x="${xp(tEnd) + 8}" y="${yp(yEnd) - 4}" font-size="12" fill="${color}">${a}</text>`);
+    s.push(`<text x="${xp(tEnd) + 8}" y="${yp(yEnd) + 12}" font-size="12" fill="${color}">${b}</text>`);
+  }
+  s.push(`<text x="${xp(2)}" y="${yp(oneHit(30)) + 40}" font-size="12" fill="${BLUE}">straight line: the same 7.4% of the</text>`);
+  s.push(`<text x="${xp(2)}" y="${yp(oneHit(30)) + 56}" font-size="12" fill="${BLUE}">children left are diagnosed every month</text>`);
+  s.push("</svg>");
+  fs.writeFileSync(path.join(OUT, "7-knudson-one-vs-two-hit.svg"), s.join("\n"));
+  console.log("\nFigure 7 (Knudson): S and % of the remaining children diagnosed in the next month");
+  for (const t of [0, 10, 20, 40]) {
+    const m1 = 1 - oneHit(t + 1) / oneHit(t), m2 = 1 - twoHit(t + 1) / twoHit(t);
+    console.log(`  month ${t}: one-hit S ${oneHit(t).toFixed(3)}, next month ${(100 * m1).toFixed(1)}% | two-hit S ${twoHit(t).toFixed(3)}, next month ${(100 * m2).toFixed(1)}%`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Figure 8: why the exact slope is 2.84, not 3. Start from the simple formula and
+// add one real-world detail at a time; refit the slope (groups 25-29 .. 80-84,
+// middle ages start + 2.5, logLogFit from model.js) after each step.
+// ---------------------------------------------------------------------------
+{
+  const { logLogFit, expectedRates } = require("./model.js");
+  const N = 100, r = 4, p = 0.005;
+  const starts = [];
+  for (let g = 25; g <= 80; g += 5) starts.push(g);
+  const mids = starts.map((g) => g + 2.5);
+  const slopeOf = (rates) => logLogFit(mids, rates).slope;
+  const fact = (n) => (n <= 1 ? 1 : n * fact(n - 1));
+  const perGroup = (f) => starts.map((g) => { let s = 0; for (let a = g + 1; a <= g + 5; a++) s += f(a); return s / 5; });
+  const Fsimple = (t) => (N * p ** r * t ** r) / fact(r); // cumulative of the simple formula
+  const steps = [
+    ["Simple formula at the middle age", slopeOf(mids.map((t) => (N * p ** r * t ** (r - 1)) / fact(r - 1)))],
+    ["+ average over each 5-year group", slopeOf(starts.map((g) => (Fsimple(g + 5) - Fsimple(g)) / 5))],
+    ["+ whole years (count the ways)", slopeOf(perGroup((a) => N * choose(a - 1, r - 1) * p ** r))],
+    ["+ every other year must be a miss", slopeOf(perGroup((a) => N * choose(a - 1, r - 1) * p ** r * (1 - p) ** (a - r)))],
+    ["+ 100 cells, people drop out (full model)", slopeOf(expectedRates(N, r, p).filter((g) => g.start >= 25).map((g) => g.rate))],
+  ];
+  console.log("\nFigure 8: slope after each step (table only; the picture shows the big step)");
+  steps.forEach(([label, v], i) => {
+    const prev = i === 0 ? null : steps[i - 1][1];
+    const change = prev === null ? "" : `  (${v - prev >= 0 ? "+" : "-"}${Math.abs(v - prev).toFixed(3)})`;
+    console.log(`  ${label.padEnd(44)} ${v.toFixed(4)}${change}`);
+  });
+
+  // Picture: one example cell type, per million cells. How many finish (get hit 4) in year t?
+  //   gray dashed = count the ways only:              C(t-1, 3) x p^4            x 1,000,000
+  //   blue        = and every other year is a miss:   C(t-1, 3) x p^4 x 0.995^(t-4) x 1,000,000
+  const simple = (t) => 1e6 * choose(t - 1, r - 1) * p ** r;
+  const real = (t) => simple(t) * (1 - p) ** (t - r);
+  const W = 760, H = 500, left = 80, right = 200, top = 90, bottom = 60;
+  const xMin = 20, xMax = 90, yMin = 0.5, yMax = 100;
+  const xp = (a) => left + (Math.log10(a) - Math.log10(xMin)) / (Math.log10(xMax) - Math.log10(xMin)) * (W - left - right);
+  const yp = (v) => H - bottom - (Math.log10(v) - Math.log10(yMin)) / (Math.log10(yMax) - Math.log10(yMin)) * (H - top - bottom);
+  const s = svgStart(W, H, "Why the slope is 2.84, not 3: the misses", "Out of 1,000,000 cells, how many get their 4th hit in year t? (r = 4, p = 0.005; log-log axes)");
+  s.push(`<text x="24" y="70" font-size="13" fill="${MUTED}">Gray: the simple count. Blue: the real count, where every year without a hit must actually be a miss (chance 0.995 each).</text>`);
+  for (const a of [20, 30, 40, 60, 80, 90]) {
+    s.push(`<line x1="${xp(a)}" y1="${top}" x2="${xp(a)}" y2="${H - bottom}" stroke="${GRID}"/>`);
+    s.push(`<text x="${xp(a)}" y="${H - bottom + 20}" font-size="12" fill="${MUTED}" text-anchor="middle">${a}</text>`);
+  }
+  for (const v of [0.5, 1, 2, 5, 10, 20, 50, 100]) {
+    s.push(`<line x1="${left}" y1="${yp(v)}" x2="${W - right}" y2="${yp(v)}" stroke="${GRID}"/>`);
+    s.push(`<text x="${left - 8}" y="${yp(v) + 4}" font-size="11" fill="${MUTED}" text-anchor="end">${v}</text>`);
+  }
+  s.push(`<text x="${(left + W - right) / 2}" y="${H - 18}" font-size="13" fill="${MUTED}" text-anchor="middle">Age t (log scale)</text>`);
+  s.push(`<text transform="translate(22 ${(top + H - bottom) / 2}) rotate(-90)" font-size="13" fill="${MUTED}" text-anchor="middle">Cells finishing in year t, per million (log scale)</text>`);
+  for (const [f, color, dash, name] of [[simple, "#8a8984", 'stroke-dasharray="7 4"', "simple count"], [real, BLUE, "", "real (with misses)"]]) {
+    const pts = [];
+    for (let a = 20; a <= 90; a++) pts.push(`${xp(a).toFixed(1)},${yp(f(a)).toFixed(1)}`);
+    s.push(`<polyline fill="none" stroke="${color}" stroke-width="2.5" ${dash} points="${pts.join(" ")}"/>`);
+    for (const a of [30, 60]) {
+      s.push(`<circle cx="${xp(a)}" cy="${yp(f(a))}" r="5" fill="${color}" stroke="${BG}" stroke-width="2"/>`);
+      s.push(`<text x="${xp(a) + (f === simple ? -8 : 8)}" y="${yp(f(a)) + (f === simple ? -10 : 18)}" font-size="12" fill="${color}" text-anchor="${f === simple ? "end" : "start"}">${f(a).toFixed(1)}</text>`);
+    }
+    const ratio = f(60) / f(30);
+    s.push(`<text x="${xp(90) + 8}" y="${yp(f(90)) + (f === simple ? -6 : 10)}" font-size="12" fill="${color}">${name}</text>`);
+    s.push(`<text x="${xp(90) + 8}" y="${yp(f(90)) + (f === simple ? 10 : 26)}" font-size="12" fill="${color}">30→60: ×${ratio.toFixed(2)} → slope ${Math.log2(ratio).toFixed(2)}</text>`);
+  }
+  s.push("</svg>");
+  fs.writeFileSync(path.join(OUT, "8-why-2.84.svg"), s.join("\n"));
+  for (const a of [30, 60]) console.log(`  age ${a}: simple ${simple(a).toFixed(3)} per million, misses factor ${((1 - p) ** (a - r)).toFixed(3)}, real ${real(a).toFixed(3)}`);
+  console.log(`  ratio 30->60: simple ${(simple(60) / simple(30)).toFixed(3)} (slope ${Math.log2(simple(60) / simple(30)).toFixed(3)}), real ${(real(60) / real(30)).toFixed(3)} (slope ${Math.log2(real(60) / real(30)).toFixed(3)})`);
+}
+
+// ---------------------------------------------------------------------------
 // Table: ways at age 30 and 60, the ratio, and the slope it implies.
 // ---------------------------------------------------------------------------
 console.log("\nr  ways at 30   ways at 60   ratio   log2(ratio) = slope   simple guess r-1");

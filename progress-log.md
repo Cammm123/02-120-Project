@@ -388,7 +388,7 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
 
 ## 2026-11-10: new graph, then back to the science (slope = r − 1)
 
-- Meeting with Clayton: focus more on the science. My plan is to understand
+- Meeting with Clayton (this was the TA check-in, done): focus more on the science. My plan is to understand
   and be able to explain the model first. The app deployment should go fast
   after that, and it matters less than the understanding.
 - New graph `output/v1-fit.svg` (by `web/plot-fit.js`, any settings): the
@@ -425,3 +425,44 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
 2. Then topics 4–5 (rates, person-years and z; what a "hit" is biologically).
 3. HAND CHECK 6/7: 20 seeds, pass line, does the simulated slope lean low?
 4. TA check-in closes Nov 13.
+
+## 2026-11-12: Knudson (1971) and why the slope is 2.84
+
+- TA check-in: done (the meeting with Clayton on Nov 10). Next deadline: Nov 20,
+  journal checkpoint 3 plus the first version live on the web.
+- Read Knudson (1971) myself (`papers/knudson-1971.pdf`). My takeaways and the
+  page checks are in `notes/reading-notes.md`:
+  - 2 mutations.
+  - Inherited form: 1 germinal + 1 somatic; non-inherited: both somatic
+    (abstract, p. 820).
+  - Non-inherited is always one eye; inherited is mostly both (Table 2).
+  - Inherited cases are diagnosed earlier: 15 vs 32 months (p. 823).
+  - Fig. 1, redrawn from his formulas (`output/learn/7-...svg`): 1 hit left
+    gives the same 7.4% of the remaining children per month (flat rate, slope
+    0); 2 hits gives a share that doubles with age (slope 1). It's the same
+    "shape of the age curve counts the hits" trick as Armitage & Doll.
+- Topic 3, why the exact slope is 2.84 and not 3. Measured step by step
+  (`output/learn/8-why-2.84.svg`, README section 4):
+
+  | step | slope |
+  |---|---|
+  | simple formula | 3.000 |
+  | 5-year groups | 2.994 |
+  | whole years (counting ways) | 3.094 |
+  | every other year must be a miss (0.995^years: 0.878 at 30, 0.755 at 60) | 2.842 |
+  | 100 cells + dropouts | 2.841 |
+
+  CORRECTION: on Nov 10 Claude said the 100 cells and the dropouts were
+  reasons. Measured, they change the slope by only 0.001, because dropouts
+  leave the numerator and the denominator together.
+- Learned what a "way" is: one exact list of which years the hits came. Its
+  chance includes 0.995 for every empty year. My explanation, in my own words:
+  `notes/armitage-doll-my-notes.md`.
+- Check answered: with a smaller p, the misses matter less and the slope gets
+  closer to 3.
+
+### Next steps
+1. The rest of the equation: N, the p's, (r−1)! (they set the height).
+2. Topics 4–5: rates, person-years and z; what a "hit" is biologically.
+3. HAND CHECK 6/7: 20 seeds, the pass line, does the simulated slope lean low?
+4. Nov 20: first version live on the web, plus journal checkpoint 3.

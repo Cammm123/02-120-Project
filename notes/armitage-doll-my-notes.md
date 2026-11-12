@@ -38,3 +38,22 @@ After the counting-cells session (pictures in `output/learn/README.md`):
 
 To remember: the height comes from N and p, and the slope comes from r. Each
 mutation a ready cell already has adds one ×2 when age doubles.
+
+## Why our slope is 2.84, not 3 (Cameron's words, 2026-11-12)
+
+After the "ways and misses" session (`output/learn/README.md`, section 4 and
+"What a way means"):
+
+> When someone is really old, the odds of them now getting cancer in the
+> simulation has a lot of ways because you have so many possible years to add
+> the first mutation. On the other hand, the number of empty years drags the
+> average down when calculating the slope, and it is weighed down a little by
+> the empty hits.
+
+To remember:
+- The ways count where **all** the earlier hits fell (r − 1 of them; 3 when
+  r = 4), not just the first, and they're counted per cell.
+- It's not really an average. Each way's chance is multiplied by 0.995 for
+  every empty year. Older cells have more empty years, so their count is cut
+  more (×0.878 at 30, ×0.755 at 60), and the line rises more slowly.
+- Ways push the slope up to about 3; misses pull it down to 2.84.

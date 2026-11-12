@@ -52,6 +52,30 @@ height, such as the rate at any one age. In the model the height comes from N
 | 20 | about 20 | 0.020 |
 | 40 | about 39 | 0.039 |
 
+## What a "way" means (added 2026-11-12, Cameron's question)
+
+A **way** is one exact list of **which years** a cell got its hits.
+
+Example: a cell needs 2 hits and gets hit 2 in year 5. Hit 1 could have been in
+year 1, 2, 3 or 4, so there are **4 ways** (H = hit, · = no hit):
+
+```
+year:    1  2  3  4  5
+way A:   H  ·  ·  ·  H
+way B:   ·  H  ·  ·  H
+way C:   ·  ·  H  ·  H
+way D:   ·  ·  ·  H  H
+```
+
+Each way is one full year-by-year story. Its chance is the chance of every
+year in the row: 2 hits (0.005 each) **and** 3 misses (0.995 each):
+
+- one way: 0.005 × 0.005 × 0.995 × 0.995 × 0.995 = 0.0000246
+- all 4 ways: 4 × 0.0000246 = 0.0000985
+
+The simple formula only multiplies the H's (4 × 0.005² = 0.0001) and forgets
+the "·" years. Each dot in figure 2 is one way.
+
 ## 2b. Why r hits gives slope r − 1: count the ways
 
 A cell gets cancer **in year t** when its last hit (hit r) lands in year t. The
@@ -213,3 +237,66 @@ rate ×2^k when age doubles  →  slope = k  →  mutations = k + 1
 The power of 2 **is** the slope, with no −1 there. The ±1 shows up only between
 slope and mutations: going forward, slope = r − 1; going backward,
 r = slope + 1. (A mix-up to watch for, from the quiz on 2026-11-10.)
+
+## 3. Knudson (1971): the same idea, for children
+
+![Knudson one vs two hits](7-knudson-one-vs-two-hit.svg)
+
+Redrawn from the two formulas in his Fig. 1 caption (p. 823). This isn't his
+data. S = fraction of the children (who will get retinoblastoma) not yet
+diagnosed.
+
+| age (months) | one hit still needed: share of remaining diagnosed next month | two hits needed: share next month |
+|---|---|---|
+| 10 | 7.4% | 1.9% |
+| 20 | 7.4% | 3.7% |
+| 40 | 7.4% | 7.2% |
+
+- **One hit:** the same share every month, so a flat rate: r = 1, slope 0.
+- **Two hits:** about ×2 per doubling of age: r = 2, slope 1.
+
+## 4. Why our exact slope is 2.84, not 3
+
+![why 2.84](8-why-2.84.svg)
+
+**Example (the picture):** out of 1,000,000 cells, how many get their 4th hit
+in year t?
+
+| age | simple count, C(t−1, 3) × 0.005⁴ × 10⁶ | × misses 0.995^(t−4) | real |
+|---|---|---|---|
+| 30 | 2.28 | × 0.878 | 2.00 |
+| 60 | 20.3 | × 0.755 | 15.3 |
+| 30 → 60 | ×8.90 (slope 3.15) | | ×7.65 (slope 2.94) |
+
+The fit uses ages 25–85, and the oldest ages lose the most to misses, so over
+the whole range the slope ends at 2.84.
+
+**All the steps, measured.** Start from the simple formula (slope exactly 3)
+and add one detail of our model at a time, refitting the slope each time:
+
+| step | slope | change |
+|---|---|---|
+| simple formula at the middle age | 3.000 | |
+| + average over each 5-year group | 2.994 | −0.006 |
+| + whole years (count the ways) | 3.094 | **+0.100** |
+| + every other year must be a miss | 2.842 | **−0.252** |
+| + 100 cells, people drop out (full model) | 2.841 | −0.001 |
+
+**The big one: "every other year must be a miss."** For a cell's last hit to
+land in year t, the cell must get its r hits in r particular years **and no
+hit in any of the other years**. Otherwise it would have finished earlier. The
+simple formula forgets that, but each "miss" has chance 0.995:
+
+| age | other years | chance they're all misses (0.995^years) |
+|---|---|---|
+| 30 | 26 | 0.878 |
+| 60 | 56 | 0.755 |
+| 80 | 76 | 0.683 |
+
+Older ages lose more, so the line tilts down. That's the same effect as
+"39 instead of 40" in section 2a.
+
+**Correction (2026-11-12):** on 2026-11-10 I (Claude) said the 100 cells and
+people dropping out were two more reasons. Measured, they change the slope by
+only 0.001. The rate is divided by person-years of people still at risk, so
+dropouts leave the numerator and the denominator together.

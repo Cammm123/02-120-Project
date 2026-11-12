@@ -65,9 +65,56 @@ don't match the primary sources, and those are flagged below.
   people at 1 hit) is the next step listed there.
 
 ## Questions to settle
-- [ ] Read Knudson (1971), PNAS 68(4):820–823, the source for the two-hit
-      retinoblastoma model. Confirm "2 hits, 0 or 1 inherited" from the paper
-      itself rather than from Wikipedia.
+- [x] Read Knudson (1971), PNAS 68(4):820–823, the source for the two-hit
+      retinoblastoma model. Confirmed: 2 mutations; inherited form = 1
+      inherited + 1 after birth; non-inherited form = both after birth
+      (abstract, p. 820). See the 2026-11-12 section below.
 - [ ] Optional: the 2004 commentaries on the original paper (Frank;
       Moolgavkar; Doll, in Int J Epidemiol 33(6)) for criticisms. Wikipedia
       doesn't summarize them.
+
+## 2026-11-12: Knudson (1971), the source paper
+
+Article: Knudson AG. "Mutation and cancer: statistical study of
+retinoblastoma." *PNAS* 68(4):820–823, 1971. `papers/knudson-1971.pdf`.
+
+### Takeaway 1: two mutations, germinal and somatic
+
+> There are two mutations. One is germinal and the other is somatic.
+
+**Check (abstract, p. 820):** right for the **inherited** form. In the
+**non-inherited** form, *both* mutations are somatic.
+- **Germinal:** passed down in the egg or sperm, so it's in every cell of the
+  body from the start.
+- **Somatic:** happens later, in one body cell, and isn't passed on.
+
+| form | mutation 1 | mutation 2 |
+|---|---|---|
+| inherited | germinal (born with it) | somatic |
+| not inherited | somatic | somatic |
+
+### Takeaway 2: one eye vs both
+
+> Nonhereditary version is unilateral while hereditary is a mix.
+
+**Check (Table 2, p. 821):** right. The non-inherited form is 0% bilateral
+(both eyes). The inherited form is mostly bilateral (60–75% of carriers),
+sometimes unilateral (25–40%), and some carriers never get a tumor (1–10%)
+(p. 820).
+
+### Takeaway 3: the ages (worked through together)
+
+- **Average age at diagnosis (p. 823):** both eyes (inherited) 15 months; one
+  eye (mostly not inherited) 32 months. The inherited form comes earlier
+  because it starts one mutation ahead.
+- **Fig. 1 (p. 823):** S = fraction of the children not yet diagnosed, on a
+  log scale, against age in months. Picture redrawn from his formulas:
+  `output/learn/7-knudson-one-vs-two-hit.svg`.
+  - Both eyes (1 hit still needed): a straight line, so the same share of the
+    remaining children (7.4%) is diagnosed every month. That's the r = 1,
+    slope 0 case: a flat rate.
+  - One eye (2 hits needed): it curves down. The share diagnosed each month
+    grows with age (1.9% at 10 months, 3.7% at 20, 7.2% at 40). Doubling age
+    doubles it: slope 1, r = 2.
+- Only in childhood: the retina cells that can turn into this tumor
+  disappear as the eye finishes growing (p. 823), so new cases stop.
