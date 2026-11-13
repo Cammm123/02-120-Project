@@ -356,6 +356,57 @@ function svgStart(W, H, title, subtitle) {
 }
 
 // ---------------------------------------------------------------------------
+// Figure 9: the ÷2 for r = 3, small enough to count. Hit 3 lands in year 6, so
+// hits 1 and 2 go in years 1-5. Every (year of hit 1, year of hit 2) pair:
+// blue = right order (hit 1 first), red X = wrong order, gray = same year (impossible).
+// ---------------------------------------------------------------------------
+{
+  const n = 5, cell = 56, x0 = 110, y0 = 110;
+  const W = 760, H = 520;
+  const RED = "#c8312b";
+  const s = svgStart(W, H, "The ÷2: only half the pairs are in the right order",
+    "r = 3, hit 3 lands in year 6. Every square = one choice of (year of hit 1, year of hit 2) from years 1–5.");
+  let right = 0, wrong = 0, same = 0;
+  for (let h1 = 1; h1 <= n; h1++) {
+    for (let h2 = 1; h2 <= n; h2++) {
+      const x = x0 + (h1 - 1) * cell, y = y0 + (n - h2) * cell; // hit 2 years go up
+      const cx = x + cell / 2, cy = y + cell / 2;
+      let fill = BG, mark = "";
+      if (h1 < h2) { right++; fill = "#e3eefb"; mark = `<circle cx="${cx}" cy="${cy}" r="10" fill="${BLUE}"/>`; }
+      else if (h1 > h2) { wrong++; mark = `<path d="M${cx - 9},${cy - 9} L${cx + 9},${cy + 9} M${cx + 9},${cy - 9} L${cx - 9},${cy + 9}" stroke="${RED}" stroke-width="3"/>`; }
+      else { same++; fill = "#ecebe6"; }
+      s.push(`<rect x="${x}" y="${y}" width="${cell}" height="${cell}" fill="${fill}" stroke="${GRID}"/>`);
+      s.push(mark);
+      s.push(`<text x="${cx}" y="${y + cell - 6}" font-size="10" fill="${MUTED}" text-anchor="middle">${h1},${h2}</text>`);
+    }
+  }
+  for (let k = 1; k <= n; k++) {
+    s.push(`<text x="${x0 + (k - 0.5) * cell}" y="${y0 + n * cell + 22}" font-size="13" fill="${INK}" text-anchor="middle">${k}</text>`);
+    s.push(`<text x="${x0 - 14}" y="${y0 + (n - k + 0.5) * cell + 5}" font-size="13" fill="${INK}" text-anchor="end">${k}</text>`);
+  }
+  s.push(`<text x="${x0 + (n * cell) / 2}" y="${y0 + n * cell + 46}" font-size="13" fill="${MUTED}" text-anchor="middle">year of hit 1</text>`);
+  s.push(`<text transform="translate(${x0 - 44} ${y0 + (n * cell) / 2}) rotate(-90)" font-size="13" fill="${MUTED}" text-anchor="middle">year of hit 2</text>`);
+  const lx = x0 + n * cell + 50;
+  const lines = [
+    [`${n} × ${n} = ${n * n} pairs in the square`, INK, true],
+    ["", INK, false],
+    [`● blue: hit 1 before hit 2 = ${right}  ✓ counts`, BLUE, true],
+    [`✕ red: hit 2 before hit 1 = ${wrong}  ✗ wrong order`, RED, true],
+    [`gray: same year = ${same}  ✗ only 1 hit per year`, MUTED, true],
+    ["", INK, false],
+    [`Blue and red are mirror images,`, INK, false],
+    [`so blue is about half the square:`, INK, false],
+    [`${n * n} / 2 = ${n * n / 2}  (formula, t² / 2!)`, INK, false],
+    [`${right} exactly  (the gray diagonal is why`, INK, false],
+    [`it's a bit less than half)`, INK, false],
+  ];
+  lines.forEach(([t, c, b], i) => s.push(`<text x="${lx}" y="${y0 + 20 + i * 22}" font-size="13" fill="${c}"${b ? ' font-weight="600"' : ""}>${t}</text>`));
+  s.push("</svg>");
+  fs.writeFileSync(path.join(OUT, "9-divide-by-2.svg"), s.join("\n"));
+  console.log(`\nFigure 9: r = 3, years 1-${n}: right ${right}, wrong ${wrong}, same ${same}`);
+}
+
+// ---------------------------------------------------------------------------
 // Table: ways at age 30 and 60, the ratio, and the slope it implies.
 // ---------------------------------------------------------------------------
 console.log("\nr  ways at 30   ways at 60   ratio   log2(ratio) = slope   simple guess r-1");

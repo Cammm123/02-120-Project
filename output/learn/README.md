@@ -300,3 +300,60 @@ Older ages lose more, so the line tilts down. That's the same effect as
 people dropping out were two more reasons. Measured, they change the slope by
 only 0.001. The rate is divided by person-years of people still at risk, so
 dropouts leave the numerator and the denominator together.
+
+## 5. The whole equation, piece by piece (2026-11-13)
+
+```
+rate  ≈   N    ×   p1 · p2 · … · pr   ×   t^(r−1) / (r−1)!
+        cells      chance of the hits      number of ways
+        per person  in one way              (hits in order)
+```
+
+- **N:** each person has N cells that could each turn into cancer, so N times
+  the cells gives about N times the cases. That's height only.
+- **p1 · p2 · … · pr:** the chance of the H's in one way. Each hit may have its
+  own chance (different genes). Our model uses one p for all, so it's p^r.
+  That's height only.
+- **t^(r−1) / (r−1)!:** the number of ways to place the r − 1 earlier hits in
+  order. Only this part changes with age, so it sets the slope.
+
+**Why ÷ (r−1)!:** the hits must come in order. With r = 3, the earlier hits 1
+and 2 fill a t × t square of (year, year) pairs, but only the half with hit 1
+before hit 2 counts (figure 2: the blue triangle). So ÷2 = 2!. With r = 4,
+three years can be ordered in 3 × 2 × 1 = 6 ways and only 1 order is right,
+so ÷6 = 3!.
+
+Check at age 30, r = 3: 30²/2 = 450 by the formula, vs 406 counted exactly
+(29 × 28 / 2). The formula is a close approximation.
+
+**Height check for our model** (N = 100, p = 0.005, r = 4, t = 62.5):
+100 × 0.005⁴ × 62.5³ / 6 = 0.00254, or 254 per 100,000. Our exact rate for
+ages 60–64 is 175.9: 0.69 of the formula. That's the misses (0.995^58 ≈ 0.75)
+and whole years (≈ 0.91) again. 0.75 × 0.91 ≈ 0.68.
+
+### The ÷2, drawn small enough to count
+
+![divide by 2](9-divide-by-2.svg)
+
+r = 3, and hit 3 lands in year 6, so hits 1 and 2 go somewhere in years 1–5.
+All 25 (year of hit 1, year of hit 2) pairs: **10 right order**, 10 wrong order
+(a mirror image), and 5 on the diagonal (same year, impossible). Right order
+≈ half the square: 25 / 2 = 12.5 by the formula, 10 exactly.
+
+### Can each hit have its own p? (Cameron's question)
+
+Yes, the model could do it. Measured with the same product
+(p1·p2·p3·p4 = 0.005⁴, so the simple formula gives the same line every time):
+
+| p for hits 1–4 | slope | rate 60–64 per 100,000 |
+|---|---|---|
+| 0.005, 0.005, 0.005, 0.005 (ours) | 2.841 | 175.9 |
+| 0.01, 0.0025, 0.005, 0.005 | 2.813 | 170.0 |
+| 0.02, 0.005, 0.0025, 0.0025 | 2.740 | 154.3 |
+| 0.0025, 0.0025, 0.005, 0.02 (same values, reversed order) | 2.740 | 154.3 |
+| 0.05, 0.0025, 0.0025, 0.002 | 2.548 | 115.2 |
+
+- The more uneven the p's, the lower the slope. A fast hit happens early in
+  almost every cell, so it stops "counting" and the cancer acts like it needs
+  fewer hits. If one p were huge, r = 4 would act like r = 3 (slope → 2).
+- Only the set of values matters, not which hit gets which.

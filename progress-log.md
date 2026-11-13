@@ -466,3 +466,45 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
 2. Topics 4–5: rates, person-years and z; what a "hit" is biologically.
 3. HAND CHECK 6/7: 20 seeds, the pass line, does the simulated slope lean low?
 4. Nov 20: first version live on the web, plus journal checkpoint 3.
+
+## 2026-11-13: the whole equation; spec for the Nov 20 web version
+
+- Finished the Armitage–Doll equation: rate ≈ N · p1⋯pr · t^(r−1)/(r−1)!.
+  - N, the p's and (r−1)! set the height. Only t^(r−1) changes with age,
+    so it alone sets the slope.
+  - (r−1)! is because the hits must come in order. Picture:
+    `output/learn/9-divide-by-2.svg`. r = 3, years 1–5: 10 in the right
+    order, 10 mirror images, 5 same-year (impossible).
+  - Height check: the formula gives 254 per 100,000 at 62.5; the exact
+    60–64 rate is 175.9, the misses again.
+  - My answers: r = 7 → ÷6! = 720. Doubling N leaves the slope alone and
+    doubles the height (proportional, not equal).
+- One p for every hit: DECIDED (me), kept. Measured with the same product:
+  uneven p's lower the slope (2.841 → 2.740 → 2.548), and only the set of
+  values matters, not their order. Added as LIMITATIONS item 3 in spec.txt,
+  with my reasons (the carcinogen question, complexity, the data can't pin
+  the separate p's).
+- Spec: new section FIRST WEB VERSION (spec.txt).
+  - My decisions: v1 + CI5 menu (lung/stomach/colon, England men), log-log
+    + plain graphs, minimal text, real data shifted to meet the model at
+    62.5.
+  - "Everything live" failed the speed test (20,000 people = 754 ms), so the
+    exact curve updates live and a button runs the simulation.
+  - Real slopes: lung 6.85, stomach 5.49, colon 4.64.
+  - Sliders decided: r 1–8, p 0.001–0.02, N 10–400, with the lifetime risk
+    shown.
+  - M vs N measured: time depends on M × N. More N makes lifetime risk
+    unrealistic (8.8% at 100, 31% at 400) and empties the old groups.
+    Defaults stay 20,000 × 100.
+- Refinement of Nov 12: dropouts change the slope by only 0.001 at the
+  defaults, but they bend it once lifetime risk is high (2.676 at
+  200 × 10,000).
+
+### Next steps
+1. Build the web version per spec: make-ci5.js, ci5.js, realRates and
+   shiftToMeet (tests first), then index.html and app.js.
+2. Deploy on Vercel by about Nov 18, ahead of the Nov 20 deadline. Put the
+   URL in README.md.
+3. HAND CHECK 6/7 (20 seeds). The simulated slope leaned low again today
+   (6 seeds, mean 2.73 vs 2.84).
+4. v2 carcinogen before Dec 1.

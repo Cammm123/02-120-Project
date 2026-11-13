@@ -270,6 +270,83 @@ DEFAULTS (proposed)
   (proposal Q2). Only the shape of the curve is compared with real data.
 
 
+FIRST WEB VERSION (due Fri Nov 20; drafted 2026-11-13, needs Cameron's OK)
+------------------------------------------------------------------------
+Goal: v1 on a public page with real data next to it. No carcinogen yet
+(that's v2, added to the same page before Dec 1).
+
+Decided by Cameron (2026-11-13):
+  - Contents: v1 + real data (CI5).
+  - Graphs: log-log (the slope) + plain rate vs age.
+  - Explanation: minimal (title, slider labels, legend, data source).
+  - Real data: a small menu, England men 2013-17: lung, stomach, colon.
+  - Real data drawn on the same axes, SHIFTED up/down to meet the model at
+    age 62.5, so the shapes can be compared by eye. Labeled with the shift and
+    the real, unshifted 60-64 rate.
+  - Running: try "everything live"; if it fails the speed test, use "exact
+    curve live, simulate on a button".
+
+Speed test (measured 2026-11-13, node, one run): M = 2,000 takes 75 ms,
+5,000 takes 188 ms, 20,000 takes 754 ms. Rule: "live" means a slider move
+redraws within about 100 ms. 20,000 people FAILS (754 ms), and 2,000 people
+passes but expects only about 2 cases in group 25-29, too noisy for a slope.
+So by Cameron's fallback: the exact curve and the real data redraw live; a
+"Run simulation" button draws the dots and the fitted line (M = 20,000).
+Re-measure in the browser when the page exists.
+
+Real slopes, ages 25-84, measured from data/ (to check by hand against the
+page):
+  lung 6.85 (R^2 0.990), stomach 5.49 (0.999), colon 4.64 (0.971).
+  Model default r = 4: exact 2.84, so to match a real cancer the reader
+  raises r. Reminder: Armitage & Doll say lung breaks constant p (smoking
+  history), which is v2's topic.
+
+Files:
+  web/index.html   page: title, sliders, menu, two graphs, legend, source.
+  web/app.js       drawing and sliders only; every number from model.js.
+  web/ci5.js       the three cancers' cases and person-years, made once by
+                   web/make-ci5.js from data/cases.csv and data/pop.csv (the
+                   full CSV is too big to load in a page).
+  model.js         unchanged rules; already loads in a browser (the
+                   module.exports line is guarded).
+
+New functions (tested in model.test.js, numbers worked by hand):
+  - realRates(groups): cases / person-years per age group, same shape as
+    ageGroupRates. Hand check from data/README.md: colon, men, England,
+    60-64: 6,082 / 7,188,268 = 846 per million.
+  - shiftToMeet(fit, targetFit, age): the factor k that moves the line `fit`
+    up or down to meet `targetFit` at `age`:
+    k = exp((targetIntercept + targetSlope ln age) - (intercept + slope ln age)).
+    Hand check: two lines with the same slope, intercepts 0 and ln 10 ->
+    k = 10 at every age.
+
+Sliders (DECIDED, Cameron 2026-11-13): r 1-8 (default 4), p 0.001-0.02
+(default 0.005), N 10-400 (default 100). M = 20,000 and seed = 1, fixed, with
+a "new seed" button. Next to N, the page prints the lifetime risk (chance
+of cancer by 85 = F(85), the sum of casesPerPerson), so a reader sees why a
+big N is unrealistic.
+  Why not lower M and raise N (measured 2026-11-13, equal M x N = 2 million
+  cells; time depends on M x N, so it's the same):
+    M x N            ms/run  lifetime  cases 25-29  cases 80-84  exact slope
+    20,000 x 100      782      8.8%       16           344         2.841
+    5,000 x 400       756     30.7%       16           268         2.836
+    2,000 x 1,000     683     60.0%       16           164         2.825
+    200 x 10,000      386    100%         15             0         2.676
+  More N makes lifetime risk unrealistic (real single cancers: a few
+  percent to ~10%), empties the old age groups, and bends the slope once
+  risk is high. (The 0.001 dropout effect measured 2026-11-12 holds only at
+  the defaults.) Defaults stay 20,000 x 100.
+
+Done when:
+  1. node model.test.js passes, including the new functions.
+  2. The page shows the same slopes as `node report.js` and
+     `node plot-fit.js` for the same settings (checked by hand for two
+     settings).
+  3. The real slopes on the page match the three numbers above.
+  4. It's live on Vercel (decided in October), and the URL is in README.md.
+  5. The CI5 citation is on the page (required by the data's terms of use).
+
+
 NOT IN v1 (later versions)
 --------------------------
   v2: the carcinogen. It multiplies p for ONE chosen hit (#1 ... #r) between a
@@ -317,3 +394,32 @@ collect these, 2026-11-09)
    born with hits already (inherited), or use a smaller r for other cancers.
    (In the report this shows as z = null, "expected 0" in group 0-4; a
    simulated case there would be a bug and is marked red.)
+
+3. One p for every hit (decided by Cameron, 2026-11-13). Armitage & Doll
+   allow each hit its own chance p1 ... pr; real hits are different genes
+   with different rates. Measured with the same product p1*p2*p3*p4 =
+   0.005^4 (so the simple formula can't tell them apart): equal p's give
+   slope 2.841; 0.02, 0.005, 0.0025, 0.0025 give 2.740; 0.05, 0.0025,
+   0.0025, 0.002 give 2.548 (output/learn/README.md, section 5). Uneven p's
+   lower the slope, because a fast hit happens early in almost every cell and
+   stops acting like a step. Only the set of values matters, not their order.
+   Why we keep one p:
+     - The research question is about a carcinogen, which speeds up hits.
+       With one p, "the carcinogen raises p" is easy to show.
+     - Too much complexity for a project this size: four sliders instead
+       of one.
+     - The age curve alone can't pin the separate p's down. It gives the
+       slope (r) and the height (the product), not each p.
+   Next step: separate p's as an advanced option.
+
+4. N and M are picked to keep the lifetime risk believable (decided by
+   Cameron, 2026-11-13). N = 100 cells and M = 20,000 people are stand-ins,
+   not real numbers (real: about 1e8 cells; see item 1). They're kept
+   because they give a lifetime risk of 8.8%, in the range of real
+   single-cancer risks (a few percent to ~10%), with plenty of cases at
+   every age from 25 up. Run time depends only on M x N, so the same time
+   could buy a bigger N with a smaller M, but that makes cancer unrealistically
+   common (31% at N = 400, 60% at N = 1,000, 100% at N = 10,000), empties
+   the old age groups, and bends the slope (2.841 -> 2.676). See FIRST WEB
+   VERSION, Sliders, for the measured table. The page lets readers go up to
+   N = 400 and prints the lifetime risk, so they can see this for themselves.
