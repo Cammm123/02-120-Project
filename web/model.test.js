@@ -2,7 +2,7 @@
 // Every expected number below was worked out by hand (or by a separate,
 // differently written program) rather than copied from model.js output.
 
-const { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates, zScores, summarizeZ, runReport } = require("./model.js");
+const { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates, zScores, summarizeZ, runReport, realRates, shiftToMeet } = require("./model.js");
 
 let passed = 0;
 let failed = 0;
@@ -785,9 +785,10 @@ console.log("\nexpectedRates");
 }
 
 // 8. No negative cases or rates anywhere, even where nearly everyone already
-//    has cancer and S is rounding noise (decided 2026-11-07: S below 1e-12 -> 0,
-//    F -> 1). Found by test 6: before the fix, p = 1, r = 3 gave group 10-14
-//    cases -2.2e-16 and rate -2. Several settings, so one lucky case can't pass.
+//    has cancer. Found by test 6 on 2026-11-07: p = 1, r = 3 gave group 10-14
+//    cases -2.2e-16 and rate -2. (First fixed with a 1e-12 cutoff; since
+//    2026-11-14 by working in logs, tests 12-16.) Several settings, so one
+//    lucky case can't pass.
 {
   const settings = [[1, 3, 1], [1, 1, 1], [5, 10, 1], [1, 2, 0.5], [3, 4, 0.9], [100, 4, 0.005]];
   for (const [N, r, p] of settings) {
@@ -797,7 +798,7 @@ console.log("\nexpectedRates");
   }
 }
 
-// 9. The cutoff only removes noise: a real tiny S above 1e-12 is kept.
+// 9. A real tiny S is kept (written for the old 1e-12 cutoff; still true).
 //    N = 1, r = 2, p = 0.5, age 40: S = P(at most 1 head in 40 flips)
 //    = (1 + 40) / 2^40 = 41 / 1,099,511,627,776 = 3.73e-11 (above 1e-12).
 //    Group 40-44 person-years starts with S(40), so it must be > 3.7e-11.
@@ -815,6 +816,73 @@ console.log("\nexpectedRates");
   checkClose("r=1 p=0.1 through logLogFit: slope 0", f.slope, 0);
   check("r=1 p=0.1 through logLogFit: R squared 1 (was 0.61)", f.rSquared, 1);
   check("r=1 p=0.1 through logLogFit: note explains the 1", typeof f.note === "string" && f.note.length > 0, true);
+}
+
+// 12-16: no cutoff (spec, decided 2026-11-14). The old rule "S below 1e-12 is
+// 0" broke any age group the cutoff landed inside. With ONE hit and a yearly
+// chance h, the rate must be h in EVERY group, however few people are left:
+//   cases = S(g)(1 - (1-h)^5), person-years = S(g)(1 - (1-h)^5)/h, so rate = h.
+
+// 12. The case that found it: r = 1, N = 100, p = 0.005.
+//     h = 1 - 0.995^100 = 1 - e^(100 ln 0.995) = 1 - e^(-0.501254) = 0.394230.
+//     S(56) is 6.5e-13, so the old code gave 55-59 a rate of 1.0 and null after.
+{
+  const groups = safe(() => expectedRates(100, 1, 0.005)) || [];
+  const h = 1 - 0.995 ** 100;
+  checkClose("h = 1 - 0.995^100 = 0.394230 (by hand)", Math.round(h * 1e6) / 1e6, 0.39423);
+  check("r=1 N=100 p=0.005: all 17 groups have a rate (none null)", groups.length === 17 && groups.every((g) => g.rate !== null), true);
+  check("r=1 N=100 p=0.005: every rate is h (within 1e-9 relative)",
+    groups.length === 17 && groups.every((g) => Math.abs(g.rate / h - 1) < 1e-9), true);
+  checkRelClose("r=1 N=100 p=0.005: group 55-59 is h, not 1.0", groups[11] && groups[11].rate, h, 1e-9);
+  checkRelClose("r=1 N=100 p=0.005: group 80-84 is h, not null", groups[16] && groups[16].rate, h, 1e-9);
+}
+
+// 13. Even fewer left: r = 1, N = 1, p = 0.9. S(t) = 0.1^t, so S(84) = 1e-84
+//     (the old cutoff made every group from 10-14 up null). Rate 0.9 everywhere.
+//     Group 5-9: cases S(5) - S(10) = 1e-5 - 1e-10; person-years
+//     1e-5 + 1e-6 + 1e-7 + 1e-8 + 1e-9 = 1.1111e-5.
+{
+  const groups = safe(() => expectedRates(1, 1, 0.9)) || [];
+  check("r=1 N=1 p=0.9: every rate 0.9 (within 1e-9 relative)",
+    groups.length === 17 && groups.every((g) => g.rate !== null && Math.abs(g.rate / 0.9 - 1) < 1e-9), true);
+  checkRelClose("r=1 N=1 p=0.9, 5-9: cases 1e-5 - 1e-10", groups[1] && groups[1].casesPerPerson, 1e-5 - 1e-10, 1e-9);
+  checkRelClose("r=1 N=1 p=0.9, 5-9: person-years 1.1111e-5", groups[1] && groups[1].personYearsPerPerson, 1.1111e-5, 1e-9);
+}
+
+// 14. Two hits with almost nobody left: N = 1, r = 2, p = 0.9.
+//     Not done = at most 1 hit: S(t) = 0.1^t + t(0.9)(0.1)^(t-1), about 7e-78 at 80.
+//     Yearly chance of finishing (by hand): h(t) = t p^2 / (1 - p + t p)
+//     = 0.81 t / (0.1 + 0.9 t). h(80) = 64.8 / 72.1 = 0.898752,
+//     h(84) = 68.04 / 75.7 = 0.898811. The 80-84 rate is a weighted average of
+//     h(80) ... h(84), so it must lie between them.
+{
+  const g = safe(() => expectedRates(1, 2, 0.9)[16]) || {};
+  check("r=2 N=1 p=0.9, 80-84: rate between h(80) = 0.898752 and h(84) = 0.898811",
+    typeof g.rate === "number" && g.rate >= 64.8 / 72.1 - 1e-12 && g.rate <= 68.04 / 75.7 + 1e-12, true);
+}
+
+// 15. The page sees it as a flat line: r = 1 rates for 25-29 ... 80-84 through
+//     logLogFit give slope 0 (the old cutoff gave 0.74).
+{
+  const groups = (safe(() => expectedRates(100, 1, 0.005)) || []).slice(5);
+  const f = safe(() => logLogFit(groups.map((g) => g.start + 2.5), groups.map((g) => g.rate))) || {};
+  checkClose("r=1 N=100 p=0.005 through logLogFit: slope 0 (old code: 0.74)", f.slope, 0);
+}
+
+// 16. Every rate is a real chance per year: between 0 and 1, or null only when
+//     truly nobody is left (p = 1). Settings near the old cutoff and past it.
+{
+  const settings = [[100, 2, 0.02], [400, 2, 0.02], [400, 3, 0.02], [3, 4, 0.9], [5, 10, 0.99], [1, 3, 1]];
+  for (const [N, r, p] of settings) {
+    const groups = safe(() => expectedRates(N, r, p)) || [];
+    check(`N=${N} r=${r} p=${p}: every rate in [0, 1] or null`,
+      groups.length === 17 && groups.every((g) => g.rate === null || (g.rate >= 0 && g.rate <= 1)), true);
+  }
+  const p1 = safe(() => expectedRates(1, 3, 1)) || [];
+  check("p=1 r=3: null only because nobody is left (S = 0 exactly)",
+    p1.slice(1).every((g) => g.rate === null && g.personYearsPerPerson === 0), true);
+  const fewLeft = safe(() => expectedRates(400, 2, 0.02)) || [];
+  check("N=400 r=2 p=0.02 (old cutoff hit it): no null rates", fewLeft.every((g) => g.rate !== null), true);
 }
 
 // 11. Inputs it must refuse (same words as simulatePopulation).
@@ -1016,6 +1084,70 @@ console.log("\nrunReport");
 // 6. Bad inputs are refused (by simulatePopulation, same words).
 checkThrows("p = 1.5", () => runReport(100, 100, 4, 1.5, 1), "p must be a number from 0 to 1");
 checkThrows("M = 0", () => runReport(0, 100, 4, 0.005, 1), "M (people) must be");
+
+
+// ---------------------------------------------------------------------------
+// realRates(cases, personYears): real data (CI5) -> the same group shape as
+// ageGroupRates. Spec: FIRST WEB VERSION, "New functions".
+// ---------------------------------------------------------------------------
+console.log("\nrealRates");
+{
+  // 1. Hand check from data/README.md: colon, men, England, 60-64:
+  //    6,082 / 7,188,268 = 0.000846... (846 per million).
+  const cases = new Array(17).fill(0), py = new Array(17).fill(1000);
+  cases[12] = 6082; py[12] = 7188268;
+  cases[0] = 5; // 5 / 1,000 = 0.005
+  const g = safe(() => realRates(cases, py)) || [];
+  check("17 groups", g.length, 17);
+  check("group 12 is 60-64", g[12] && [g[12].start, g[12].end], [60, 64]);
+  checkClose("colon 60-64: 6,082 / 7,188,268", g[12] && g[12].rate, 6082 / 7188268);
+  check("colon 60-64 is 846 per million (rounded)", g[12] && Math.round(g[12].rate * 1e6), 846);
+  checkClose("group 0-4: 5 / 1,000 = 0.005", g[0] && g[0].rate, 0.005);
+  check("0 cases -> rate 0", g[1] && g[1].rate, 0);
+  check("keeps cases and person-years", g[12] && [g[12].cases, g[12].personYears], [6082, 7188268]);
+  check("same keys as ageGroupRates", g[0] && Object.keys(g[0]).sort().join(), "cases,end,personYears,rate,start");
+}
+{
+  // 2. 0 person-years -> rate null (no divide by zero), like ageGroupRates.
+  const g = safe(() => realRates([0, 3], [0, 100])) || [];
+  check("0 person-years -> null", g[0] && g[0].rate, null);
+  checkClose("second group 3 / 100", g[1] && g[1].rate, 0.03);
+  check("works for any number of groups (here 2)", g.length, 2);
+}
+// 3. Bad inputs are refused.
+checkThrows("lengths differ", () => realRates([1, 2], [10]), "same number of age groups");
+checkThrows("negative cases", () => realRates([-1], [10]), "cases and person-years must be numbers >= 0");
+checkThrows("negative person-years", () => realRates([1], [-10]), "cases and person-years must be numbers >= 0");
+checkThrows("text instead of a number", () => realRates(["5"], [10]), "cases and person-years must be numbers >= 0");
+checkThrows("cases but 0 person-years", () => realRates([4], [0]), "cases with 0 person-years");
+
+// ---------------------------------------------------------------------------
+// shiftToMeet(fit, targetFit, age): the factor k that slides `fit` up or down
+// to meet `targetFit` at `age`. Fits are natural-log lines:
+// log(rate) = intercept + slope * log(age).
+// ---------------------------------------------------------------------------
+console.log("\nshiftToMeet");
+{
+  // 1. Parallel lines, target 10x higher (intercept ln 10): k = 10 at any age.
+  const a = { slope: 3, intercept: 0 }, b = { slope: 3, intercept: Math.log(10) };
+  checkClose("parallel, 10x higher, age 62.5 -> 10", safe(() => shiftToMeet(a, b, 62.5)), 10);
+  checkClose("parallel, 10x higher, age 2 -> 10", safe(() => shiftToMeet(a, b, 2)), 10);
+  // 2. Same line -> 1. Target lower -> k < 1 (1/10).
+  checkClose("same line -> 1", safe(() => shiftToMeet(a, a, 40)), 1);
+  checkClose("target 10x lower -> 0.1", safe(() => shiftToMeet(b, a, 40)), 0.1);
+  // 3. Different slopes: A = age^1, B = age^2 (both intercept 0).
+  //    At 10: A = 10, B = 100 -> k = 10. At 5: A = 5, B = 25 -> k = 5.
+  const A = { slope: 1, intercept: 0 }, B = { slope: 2, intercept: 0 };
+  checkClose("slopes 1 vs 2 at age 10 -> 10", safe(() => shiftToMeet(A, B, 10)), 10);
+  checkClose("slopes 1 vs 2 at age 5 -> 5", safe(() => shiftToMeet(A, B, 5)), 5);
+  // 4. After shifting, the two lines really meet: k x A(age) = B(age).
+  const at = (f, t) => Math.exp(f.intercept + f.slope * Math.log(t));
+  const k = safe(() => shiftToMeet({ slope: 6.85, intercept: -30 }, { slope: 2.84, intercept: -18.1 }, 62.5));
+  checkRelClose("real-like numbers: k x line meets target at 62.5",
+    k * at({ slope: 6.85, intercept: -30 }, 62.5), at({ slope: 2.84, intercept: -18.1 }, 62.5), 1e-12);
+}
+checkThrows("age 0", () => shiftToMeet({ slope: 1, intercept: 0 }, { slope: 1, intercept: 0 }, 0), "age must be a number > 0");
+checkThrows("missing fit", () => shiftToMeet(null, { slope: 1, intercept: 0 }, 5), "fit and targetFit need a slope and an intercept");
 
 // ---------------------------------------------------------------------------
 console.log(`\n${passed} passed, ${failed} failed`);

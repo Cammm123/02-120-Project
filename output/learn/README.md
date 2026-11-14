@@ -357,3 +357,66 @@ Yes, the model could do it. Measured with the same product
   almost every cell, so it stops "counting" and the cancer acts like it needs
   fewer hits. If one p were huge, r = 4 would act like r = 3 (slope → 2).
 - Only the set of values matters, not which hit gets which.
+
+## 6. The 1e-12 cutoff bug (found and fixed 2026-11-14)
+
+![cutoff bug](10-cutoff-bug.svg)
+
+Made by `web/learn-cutoff-bug.js`, which keeps a copy of the old code just to
+draw this.
+
+**The old rule (2026-11-07):** if S, the chance of still being cancer-free,
+was below 1e-12, set it to exactly 0 (and F to 1). It was meant to remove
+rounding noise when p is near 1.
+
+**What it broke:** r = 1, N = 100, p = 0.005. Every year 39.4% of the people
+still cancer-free get cancer (1 − 0.995¹⁰⁰), so the true rate is 0.394 in
+**every** group. S shrinks fast:
+
+| age | true S | old rule |
+|---|---|---|
+| 55 | 1.06e-12 | kept |
+| 56 | 6.45e-13 | **0** |
+| 57–60 | smaller | **0** |
+
+| group 55–59 | true | old rule |
+|---|---|---|
+| cases = S(55) − S(60) | 0.92 × S(55) | all of S(55) (F jumped to 1) |
+| person-years = S(55) + … + S(59) | 2.33 × S(55) | just S(55) (ages 56–59 erased) |
+| rate | **0.394** | **1.0** |
+
+The rule made everyone left "get cancer" in that group's first year and
+erased their later years. Then logLogFit tilted the flat slope (0) to
+**0.74**.
+
+**How much it reached:** 1,655 of the 12,480 slider settings (13%). By r:
+r = 1: 388, r = 2: 845, r = 3: 389, r = 4: 33, r = 5–8: none. All of them
+have high p or N, where nearly everyone gets cancer before 85. The defaults
+weren't affected.
+
+**Why the tests missed it:** the bad group has about 1e-12 cases per person,
+or 0.00000002 cases among 20,000 people, so the counts and z-scores look
+fine. But a rate is one tiny number divided by another, so it doesn't look
+tiny. We had tested what the cutoff did to S, never to a rate in a group it
+landed inside.
+
+**The fix (Cameron chose option B): work in logs, never round S to 0.**
+- Keep log S. When a cell is nearly sure to finish, compute its "not done"
+  chance directly from the bottom of the Binomial (in logs), never as
+  1 − (almost 1).
+- For each group, divide every S by S(g) first:
+  rate = (share of those left at g who get cancer by g+5) ÷ (their years at
+  risk, relative to S(g)). So S = 1e-300 still gives the right rate.
+- Rate is null only when truly nobody is left (p = 1).
+
+**Checked after the fix:**
+- With r = 1, every group equals h at all 1,560 (p, N) slider settings. Worst
+  error: 1 part in 10 trillion.
+- No null or impossible rate at any of the 12,480 settings.
+- The defaults' exact slope is still 2.841.
+- 287 tests pass. 10 of 11 planted bugs were caught; the 11th was a safety
+  cap that turned out never to trigger, so it was removed.
+
+**How to explain it:** a shortcut for "too small to matter" was right about
+the counts but wrong about the rates. A rate divides two small numbers, so
+small mistakes in both don't cancel.

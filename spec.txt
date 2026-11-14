@@ -161,8 +161,33 @@ are tiny, and the obvious way to compute them is wrong.
     F = 1, so cases are never negative). Measured: the largest noise in q is
     8.9e-16, so 1e-12 is ~1,000x above it; an S that small means less than
     one person at risk in any simulation, so nothing real is lost.
+  - REPLACED 2026-11-14 (Cameron chose option B): the 1e-12 cutoff caused
+    its own bug. When the cutoff lands inside an age group, everyone still
+    left "gets cancer" in that group's first year and their later years at
+    risk are erased. r = 1, N = 100, p = 0.005 has a true rate of 0.394 in
+    every group, but gave 1.0 for 55-59 and null after, which tilted a flat
+    slope (0) to 0.74. It affected 1,655 of the 12,480 slider settings
+    (r 1-4 with high p or N). Pictures and tables:
+    output/learn/README.md, section 6.
+    New rule: work in LOGS and never round S to 0.
+      log S(t) = N * log(chance one cell is not done), where that chance is
+        1 - q via log1p(-q) when q < 0.5 (q small: the top-of-Binomial sum
+        is exact), and otherwise the BOTTOM of the Binomial,
+        P(Binomial(t, p) <= r - 1), summed directly in logs (so 1 - q is
+        never computed by subtracting from 1, and nothing underflows).
+      (A cap "S can't go up with age" was tried and dropped: measured over
+      p 0.001-0.999, r 1-12, ages 0-85, log S never went up, so the cap
+      could never be tested.)
+      For group g: d = log S(g+5) - log S(g) (0 or negative).
+        rate = -expm1(d) / [sum over a = g..g+4 of exp(log S(a) - log S(g))]
+        (every S is divided by S(g) first, so tiny S values never meet).
+        casesPerPerson = S(g) * -expm1(d); personYearsPerPerson = sum of S.
+        rate = null only when log S(g) = -infinity: truly nobody left
+        (for example p = 1).
+    Check: with one hit, a constant yearly chance h gives rate h in every
+    group (cases S(g)(1 - (1-h)^5) / person-years S(g)(1 - (1-h)^5)/h = h).
 expectedRates must sum the top of the Binomial directly, use log1p/expm1,
-and compute the top of the rate from F, not from S.
+and compute the top of the rate without subtracting two numbers near 1.
 
 
 FUNCTIONS (built and tested one at a time, in this order)
@@ -322,7 +347,10 @@ New functions (tested in model.test.js, numbers worked by hand):
 
 Sliders (DECIDED, Cameron 2026-11-13): r 1-8 (default 4), p 0.001-0.02
 (default 0.005), N 10-400 (default 100). M = 20,000 and seed = 1, fixed, with
-a "new seed" button. Next to N, the page prints the lifetime risk (chance
+a "new seed" button. Snap stops (Cameron, 2026-11-14, after the demo: too
+many in-between values made three knobs confusing): p 0.001, 0.002, 0.003,
+0.005, 0.0075, 0.01, 0.015, 0.02; N 10, 25, 50, 100, 150, 200, 300, 400;
+r 1-8. Next to N, the page prints the lifetime risk (chance
 of cancer by 85 = F(85), the sum of casesPerPerson), so a reader sees why a
 big N is unrealistic.
   Why not lower M and raise N (measured 2026-11-13, equal M x N = 2 million

@@ -214,49 +214,67 @@ function cellDoneChance(t, r, p) {
 }
 
 /**
- * Below this, a chance of being cancer-free is rounding noise, not a real
- * value (spec.txt, decided 2026-11-07). Measured: the largest noise in q when
- * the true q is exactly 1 is 8.9e-16 (r = 1-20, ages 0-85), so 1e-12 is about
- * 1,000 times above it, and far below anything a simulation could show.
+ * log of the chance that ONE cell is NOT done after t years: log P(Binomial(t, p) <= r - 1).
+ * Two exact routes (spec.txt, arithmetic trap, decided 2026-11-14):
+ *   q = cellDoneChance small (< 0.5): log1p(-q), so a tiny q like 1e-27 is kept;
+ *   q near 1: sum the BOTTOM of the Binomial directly, in logs, so 1 - q is never
+ *   computed as "1 minus almost 1" and nothing underflows to 0.
+ * Returns -Infinity only when the cell is surely done (p = 1 and t >= r).
  */
-const TINY_S = 1e-12;
+function logCellNotDone(t, r, p) {
+  const q = cellDoneChance(t, r, p); // also checks t, r, p
+  if (q < 0.5) return Math.log1p(-q);
+  if (p === 1) return t >= r ? -Infinity : 0;
+  // log of each term C(t, j) p^j (1-p)^(t-j), j = 0 .. r-1, then log-sum-exp.
+  const logs = [];
+  let logC = 0; // log C(t, 0)
+  for (let j = 0; j <= Math.min(r - 1, t); j++) {
+    if (j > 0) logC += Math.log((t - j + 1) / j);
+    logs.push(logC + j * Math.log(p) + (t - j) * Math.log1p(-p));
+  }
+  const top = Math.max(...logs);
+  return top + Math.log(logs.reduce((sum, x) => sum + Math.exp(x - top), 0));
+}
 
 /**
  * The exact rate in each five-year age group, with no random numbers
  * (spec.txt, THE EXACT ANSWER). Same shape as ageGroupRates:
  * [{ start, end, casesPerPerson, personYearsPerPerson, rate }, ...].
- * With q = cellDoneChance(t, r, p) for one cell after t years:
- *   S(t) = (1 - q)^N  cancer-free at the start of age t (all N cells below r)
- *   F(t) = 1 - S(t)   computed directly as -expm1(N * log1p(-q))
- *   casesPerPerson = F(g+5) - F(g)  (from F: S(g) - S(g+5) rounds to 0)
- *   personYearsPerPerson = S(g) + ... + S(g+4), the same rule as ageGroupRates
- *   rate = cases / person-years, or null when person-years = 0.
- * When S is below TINY_S it is rounding noise (q came out as 0.9999999999999999
- * instead of 1), so S is set to 0 and F to 1 (decided 2026-11-07, spec.txt).
+ * Works with log S(t) = N * logCellNotDone(t, r, p), the log of the chance a
+ * person is cancer-free at the start of age t (all N cells below r hits).
+ * For group g, with d = log S(g+5) - log S(g):
+ *   rate = -expm1(d) / (sum of S(a) / S(g) for a = g .. g+4)
+ *   casesPerPerson = S(g) * -expm1(d), personYearsPerPerson = S(g) + ... + S(g+4).
+ * Dividing by S(g) first means even S = 1e-300 gives the right rate. rate is null
+ * only when nobody is left at all (log S(g) = -Infinity). No cutoff (the old
+ * "S below 1e-12 is 0" rule broke groups it landed in; replaced 2026-11-14).
  * Throws for N not a whole number >= 1; cellDoneChance checks r and p.
  */
 function expectedRates(N, r, p) {
   if (!Number.isInteger(N) || N < 1) throw new Error(`N (cells) must be a whole number >= 1, got ${N}`);
-  const S = [];
-  const F = [];
+  const logS = [];
   for (let t = 0; t <= YEARS; t++) {
-    // q can come out as 1.0000000000000002 (noise above an impossible 1),
-    // and log(1 - q) of that is NaN, so cap it at 1.
-    const q = Math.min(1, cellDoneChance(t, r, p));
-    const logOneCellOK = Math.log1p(-q); // log(1 - q)
-    let s = Math.exp(N * logOneCellOK);
-    let f = -Math.expm1(N * logOneCellOK);
-    if (s < TINY_S) { s = 0; f = 1; } // noise, not a real chance (catch 1: F too)
-    S.push(s);
-    F.push(f);
+    logS.push(N * logCellNotDone(t, r, p));
   }
   const groups = [];
   for (let start = 0; start < YEARS; start += 5) {
-    const casesPerPerson = F[start + 5] - F[start];
+    const base = logS[start];
     let personYearsPerPerson = 0;
-    for (let t = start; t < start + 5; t++) personYearsPerPerson += S[t];
-    const rate = personYearsPerPerson > 0 ? casesPerPerson / personYearsPerPerson : null;
-    groups.push({ start, end: start + 4, casesPerPerson, personYearsPerPerson, rate });
+    for (let t = start; t < start + 5; t++) personYearsPerPerson += Math.exp(logS[t]);
+    if (base === -Infinity) {
+      groups.push({ start, end: start + 4, casesPerPerson: 0, personYearsPerPerson: 0, rate: null });
+      continue;
+    }
+    const finishedShare = -Math.expm1(logS[start + 5] - base); // share of those left at g who get cancer by g+5
+    let relativeYears = 0;
+    for (let t = start; t < start + 5; t++) relativeYears += Math.exp(logS[t] - base);
+    groups.push({
+      start,
+      end: start + 4,
+      casesPerPerson: Math.exp(base) * finishedShare,
+      personYearsPerPerson,
+      rate: finishedShare / relativeYears,
+    });
   }
   return groups;
 }
@@ -375,4 +393,34 @@ function runReport(M, N, r, p, seed) {
 }
 
 // Lets the same file load in the browser (as globals) and in Node (for tests).
-if (typeof module !== "undefined") module.exports = { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates, zScores, summarizeZ, runReport };
+/**
+ * Real data (CI5) as age-group rates, in the same shape as ageGroupRates:
+ * [{start, end, cases, personYears, rate}], group i covers ages 5i to 5i+4.
+ * rate = cases / personYears; null when personYears is 0 (nobody at risk).
+ */
+function realRates(cases, personYears) {
+  if (cases.length !== personYears.length) throw new Error("cases and personYears need the same number of age groups");
+  const ok = (x) => typeof x === "number" && Number.isFinite(x) && x >= 0;
+  return cases.map((c, i) => {
+    const py = personYears[i];
+    if (!ok(c) || !ok(py)) throw new Error("cases and person-years must be numbers >= 0");
+    if (py === 0 && c > 0) throw new Error(`group ${5 * i}-${5 * i + 4} has cases with 0 person-years`);
+    return { start: 5 * i, end: 5 * i + 4, cases: c, personYears: py, rate: py > 0 ? c / py : null };
+  });
+}
+
+/**
+ * The factor k that slides line `fit` up or down so it meets `targetFit` at `age`.
+ * Both are natural-log fits: log(rate) = intercept + slope * log(age).
+ * k = exp(target line at age - fit line at age). Multiplying rates by k moves
+ * the line on log-log axes without changing its slope.
+ */
+function shiftToMeet(fit, targetFit, age) {
+  const isLine = (f) => f && Number.isFinite(f.slope) && Number.isFinite(f.intercept);
+  if (!isLine(fit) || !isLine(targetFit)) throw new Error("fit and targetFit need a slope and an intercept");
+  if (!(typeof age === "number" && age > 0)) throw new Error("age must be a number > 0");
+  const logAge = Math.log(age);
+  return Math.exp((targetFit.intercept + targetFit.slope * logAge) - (fit.intercept + fit.slope * logAge));
+}
+
+if (typeof module !== "undefined") module.exports = { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates, zScores, summarizeZ, runReport, realRates, shiftToMeet, SLOPE_FROM };

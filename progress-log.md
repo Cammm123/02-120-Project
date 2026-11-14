@@ -508,3 +508,53 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
 3. HAND CHECK 6/7 (20 seeds). The simulated slope leaned low again today
    (6 seeds, mean 2.73 vs 2.84).
 4. v2 carcinogen before Dec 1.
+
+## 2026-11-14: first draft of the website; the cutoff bug fixed in logs
+
+- Built all of the FIRST WEB VERSION spec in one go (my choice):
+  - `realRates` + `shiftToMeet`, tests first. Hand checks: colon 60–64 846 per
+    million; parallel lines ×10; slopes 1 vs 2 give ×10 at 10 and ×5 at 5.
+    7 of 7 planted bugs caught.
+  - `make-ci5.js` → `web/ci5.js` (lung, stomach, colon; England men). Matches
+    the spec: 6,082 / 7,188,268; slopes 6.85 / 5.49 / 4.64.
+  - `index.html` + `app.js`. The page's numbers equal runReport's (exact 2.841,
+    simulated 2.762, lifetime 8.8%), and each real line meets the model at
+    62.5.
+- Found by the demo: the 1e-12 cutoff (Nov 7) broke any age group it landed
+  inside. r = 1 gave 1.0 instead of 0.394 and a slope of 0.74 instead of 0. It
+  reached 1,655 of the 12,480 slider settings (r 1–4, high p/N); the defaults
+  were fine.
+  - DECIDED (me): option B, work in logs and drop the cutoff. New
+    `logCellNotDone`, and expectedRates divides every S by S(g) first.
+  - Tests first (they failed on the old code as expected); 287 pass. 10 of 11
+    planted bugs caught; the 11th was a cap that never triggers, so I
+    removed it.
+  - After the fix: r = 1 equals h at all 1,560 (p, N) settings (worst error
+    1e-13), and none of the 12,480 settings has a null or impossible rate.
+    The defaults are unchanged.
+  - Written up for later: `output/learn/README.md` section 6 +
+    `web/learn-cutoff-bug.js`.
+- My demo notes, all done:
+  - clearer "running" state (overlay, locked controls)
+  - a legend explaining the grey band (ages used for the slope)
+  - a clearer top sentence
+  - lifetime risk as a big tile
+  - sliders snap to 8 stops each (p 0.001…0.02, N 10…400)
+  - "simulated people" fixed to "one dot per age group" (I'd thought each dot
+    was a person; it's a rate from all 20,000), with counts on hover
+- Accuracy measures back on the page (my picks):
+  - R² on the exact, simulated and real tiles
+  - a match panel: largest |z| with its group and direction, colored by the
+    decided 2/3 bands; the sum of z² vs the noise range (left uncoloured, since
+    no cutoff was decided)
+  - "pass line not set yet"
+
+  Matches report.js: 2.35 in 35–39, sum z² 20.9, noise 7.1–16.9.
+- TO CHECK: run time in my browser. Headless Chrome said 4.3 s vs 0.75 s in
+  node. If it's really ~4 s, speed it up before Nov 20.
+
+### Next steps
+1. My browser's run time; speed up if needed.
+2. Deploy on Vercel (by ~Nov 18) and put the URL in README.md.
+3. HAND CHECK 6/7 (20 seeds) to set the pass line.
+4. v2 carcinogen before Dec 1.
