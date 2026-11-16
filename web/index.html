@@ -10,7 +10,12 @@
   body { margin: 0; font-family: Helvetica, Arial, sans-serif; color: var(--ink); background: var(--bg); }
   main { max-width: 1180px; margin: 0 auto; padding: 24px 20px 40px; }
   h1 { font-size: 24px; margin: 0 0 6px; }
-  .lead { color: var(--muted); margin: 0 0 18px; font-size: 15px; line-height: 1.5; max-width: 860px; }
+  h2 { font-size: 18px; margin: 22px 0 8px; }
+  .lead { color: var(--muted); margin: 0 0 14px; font-size: 15px; line-height: 1.5; max-width: 860px; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--grid); margin: 0 0 16px; }
+  .tab { border: 1px solid transparent; border-bottom: none; background: none; padding: 8px 16px; border-radius: 6px 6px 0 0;
+    font-size: 14px; color: var(--muted); margin-bottom: -1px; }
+  .tab.on { border-color: var(--grid); background: var(--bg); color: var(--ink); font-weight: 600; }
   .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 24px; align-items: end;
     padding: 16px; border: 1px solid var(--grid); border-radius: 8px; background: #fff; }
   label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
@@ -24,14 +29,30 @@
   .status { font-size: 13px; color: var(--muted); margin-top: 6px; min-height: 1.2em; }
   .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
   .tile { border: 1px solid var(--grid); border-radius: 8px; background: #fff; padding: 12px 14px; }
-  .tile .name { font-size: 13px; color: var(--muted); }
+  .tile .name { font-size: 13px; color: var(--muted); font-weight: 600; }
   .tile .big { font-size: 30px; font-weight: 600; margin: 2px 0; }
   .tile .small { font-size: 12px; color: var(--muted); line-height: 1.4; }
-  #tLife .big { color: var(--ink); } #tSim .big { color: var(--blue); } #tReal .big { color: var(--orange); }
+  .tile .r2 { display: block; margin-top: 4px; color: var(--ink); }
+  #tSim .big { color: var(--blue); } #tReal .big { color: var(--orange); }
+  .matchRow { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; margin: 0 0 16px; align-items: start; }
+  @media (max-width: 800px) { .matchRow { grid-template-columns: 1fr; } }
+  .box { border: 1px solid var(--grid); border-radius: 8px; background: #fff; padding: 12px 14px; font-size: 14px; line-height: 1.6; }
+  .box .title { font-weight: 600; margin-bottom: 4px; }
+  .box .small { font-size: 12px; color: var(--muted); line-height: 1.4; margin-top: 4px; }
+  .howto { background: #f6f6f3; font-size: 13px; line-height: 1.5; }
+  .howto p { margin: 0 0 8px; }
+  .howto math[display=block] { margin: 4px 0 10px; font-size: 15px; }
+  #tip ul { margin: 4px 0 0; padding-left: 16px; }
+  #tip li { margin: 1px 0; }
+  .verdict { font-weight: 600; margin-bottom: 4px; }
+  .verdict.ok { color: #1f7a45; } .verdict.bad { color: #b3261e; }
+  .yellow { color: #8a5a00; background: #fff1c7; padding: 0 3px; border-radius: 3px; }
+  .red { color: #b3261e; background: #fde7e5; padding: 0 3px; border-radius: 3px; }
   .legend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--muted); margin: 0 0 10px; align-items: center; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
-  .sw { display: inline-block; width: 22px; height: 0; border-top: 2px solid; }
+  .sw { display: inline-block; width: 24px; height: 0; border-top: 3px solid; }
   .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+  .ring { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid #d4a017; }
   .band { display: inline-block; width: 22px; height: 12px; background: rgba(11,11,11,0.07); border: 1px solid #ddd; }
   .graphs { position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 16px; }
   .graphs svg { width: 100%; height: auto; border: 1px solid var(--grid); border-radius: 8px; background: #fff; transition: opacity 0.15s; }
@@ -39,12 +60,14 @@
     font-size: 20px; font-weight: 600; color: var(--blue); }
   .graphs.busy svg { opacity: 0.25; }
   .graphs.busy .overlay { display: flex; }
-  .match { border: 1px solid var(--grid); border-radius: 8px; background: #fff; padding: 12px 14px; margin: 0 0 16px;
-    font-size: 14px; line-height: 1.7; }
-  .match .mtitle { font-weight: 600; margin-bottom: 2px; }
-  .match .note { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
-  .yellow { color: #a86b00; background: #fff4d6; padding: 0 3px; border-radius: 3px; }
-  .red { color: #b3261e; background: #fde7e5; padding: 0 3px; border-radius: 3px; }
+  .pt { cursor: pointer; }
+  #tip { display: none; position: fixed; z-index: 10; max-width: 320px; background: #1f1f1d; color: #fff; font-size: 12px;
+    line-height: 1.4; padding: 7px 9px; border-radius: 6px; pointer-events: none; }
+  .data { max-width: 860px; font-size: 14px; line-height: 1.6; }
+  .data table { border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+  .data th, .data td { border-bottom: 1px solid var(--grid); padding: 4px 14px 4px 0; text-align: right; }
+  .data th:first-child, .data td:first-child { text-align: left; }
+  .data tr.dim td { color: #9a9994; }
   footer { margin-top: 24px; font-size: 12px; color: var(--muted); line-height: 1.5; }
 </style>
 </head>
@@ -56,66 +79,125 @@
     scales</b> (left graph): the line's <b>slope tells you how many hits are needed, about r − 1</b>. Compare it with
     real cancers to estimate their r.</p>
 
-  <section class="controls">
-    <div>
-      <label for="r">Hits needed, r: <b id="rOut"></b></label>
-      <input id="r" type="range" min="1" max="8" step="1" value="4" list="rTicks">
-      <datalist id="rTicks"><option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option><option value="5"></option><option value="6"></option><option value="7"></option><option value="8"></option></datalist>
-      <div class="ends"><span>1</span><span>8</span></div>
-    </div>
-    <div>
-      <label for="p">Chance of a hit per cell per year, p: <b id="pOut"></b></label>
-      <input id="p" type="range" min="0" max="7" step="1" value="3" list="eightTicks">
-      <div class="ends"><span>0.001</span><span>0.02</span></div>
-    </div>
-    <div>
-      <label for="N">Cells per person, N: <b id="NOut"></b></label>
-      <input id="N" type="range" min="0" max="7" step="1" value="3" list="eightTicks">
-      <div class="ends"><span>10</span><span>400</span></div>
-    </div>
-    <datalist id="eightTicks"><option value="0"></option><option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option><option value="5"></option><option value="6"></option><option value="7"></option></datalist>
-    <div>
-      <label for="cancer">Real data (England, men, 2013–17)</label>
-      <select id="cancer"></select>
-    </div>
-    <div>
-      <button id="run" class="primary">Run simulation</button>
-      <button id="seed">New seed</button>
-      <div class="status" id="status"></div>
-    </div>
-  </section>
+  <nav class="tabs">
+    <button class="tab on" data-panel="modelPanel">Model</button>
+    <button class="tab" data-panel="dataPanel">About Data</button>
+  </nav>
 
-  <section class="tiles">
-    <div class="tile" id="tLife"><div class="name">Lifetime risk</div><div class="big"></div><div class="small"></div></div>
-    <div class="tile" id="tExact"><div class="name">Exact slope (model, no randomness)</div><div class="big"></div><div class="small"></div></div>
-    <div class="tile" id="tSim"><div class="name">Simulated slope</div><div class="big"></div><div class="small"></div></div>
-    <div class="tile" id="tReal"><div class="name">Real slope</div><div class="big"></div><div class="small"></div></div>
-  </section>
+  <div class="panel" id="modelPanel">
+    <section class="controls">
+      <div>
+        <label for="r">Hits needed, r: <b id="rOut"></b></label>
+        <input id="r" type="range" min="1" max="8" step="1" value="4" list="rTicks">
+        <datalist id="rTicks"><option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option><option value="5"></option><option value="6"></option><option value="7"></option><option value="8"></option></datalist>
+        <div class="ends"><span>1</span><span>8</span></div>
+      </div>
+      <div>
+        <label for="p">Chance of a hit per cell per year, p: <b id="pOut"></b></label>
+        <input id="p" type="range" min="0" max="7" step="1" value="3" list="eightTicks">
+        <div class="ends"><span>0.001</span><span>0.02</span></div>
+      </div>
+      <div>
+        <label for="N">Cells per person, N: <b id="NOut"></b></label>
+        <input id="N" type="range" min="0" max="7" step="1" value="3" list="eightTicks">
+        <div class="ends"><span>10</span><span>400</span></div>
+      </div>
+      <datalist id="eightTicks"><option value="0"></option><option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option><option value="5"></option><option value="6"></option><option value="7"></option></datalist>
+      <div>
+        <label for="cancer">Real cancer to compare with</label>
+        <select id="cancer"></select>
+      </div>
+      <div>
+        <button id="run" class="primary">Run simulation</button>
+        <button id="seed">New seed</button>
+        <div class="status" id="status"></div>
+      </div>
+    </section>
 
-  <section class="match" id="match"></section>
+    <section class="tiles">
+      <div class="tile" id="tLife"><div class="name">Lifetime risk</div><div class="big"></div><div class="small"></div></div>
+      <div class="tile" id="tExact"><div class="name">Exact slope</div><div class="big"></div><div class="small"></div></div>
+      <div class="tile" id="tSim"><div class="name">Simulated slope</div><div class="big"></div><div class="small"></div></div>
+      <div class="tile" id="tReal"><div class="name">Real slope</div><div class="big"></div><div class="small"></div></div>
+    </section>
 
-  <div class="legend">
-    <span><i class="dot" style="background: var(--blue)"></i> simulated rate: one dot per 5-year age group, from all 20,000 people (hover for counts)</span>
-    <span><i class="sw" style="border-color: var(--blue); border-top-style: dashed"></i> line fitted to the blue dots</span>
-    <span><i class="sw" style="border-color: var(--ink)"></i> exact model</span>
-    <span><i class="dot" style="background: var(--orange)"></i> real rate, one dot per age group (moved up or down to meet the model at age 62.5)</span>
-    <span><i class="band"></i> ages 25–84, used to measure the slope</span>
+    <section class="matchRow">
+      <div class="box">
+        <div class="title">Does the simulation match the exact model?</div>
+        <div id="matchResults"></div>
+      </div>
+      <div class="box howto">
+        <div class="title">How to read these</div>
+        <p><b>Gap for one age group (z):</b> how many "noise units" the group is off.</p>
+        <math display="block"><mi>z</mi><mo>=</mo><mfrac><mrow><mtext>simulated cancers</mtext><mo>−</mo><mtext>expected cancers</mtext></mrow><msqrt><mtext>expected cancers</mtext></msqrt></mfrac></math>
+        <p>Random chance alone usually keeps z between −2 and +2. The page shows its size, ignoring whether it's too
+          many or too few. <b>Colors for the largest gap:</b> up to 2 plain; 2 to 3 <span class="yellow">yellow</span>;
+          over 3 <span class="red">red</span>. With 12 age groups, one above 2 happens in about half of correct runs,
+          so yellow on its own is not a problem.</p>
+        <p><b>Total miss:</b> every group's gap squared, added up (k = number of age groups judged).</p>
+        <math display="block"><mtext>total miss</mtext><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>k</mi></munderover><msubsup><mi>z</mi><mi>i</mi><mn>2</mn></msubsup></math>
+        <p>With pure chance it averages k (about 12). <b>Pass line</b>, set by running 20 seeds:</p>
+        <math display="block"><mtext>pass line</mtext><mo>=</mo><mi>k</mi><mo>+</mo><mn>3</mn><msqrt><mn>2</mn><mi>k</mi></msqrt><mspace width="0.6em"/><mtext>(26.7 when k = 12)</mtext></math>
+        <p><b>R²</b> on the slope tiles: how straight the points are around <i>their own</i> line on the log-log graph
+          (1 = perfectly straight).</p>
+        <math display="block"><msup><mi>R</mi><mn>2</mn></msup><mo>=</mo><mn>1</mn><mo>−</mo><mfrac><mrow><mo>∑</mo><msup><mtext>(miss from the line)</mtext><mn>2</mn></msup></mrow><mrow><mo>∑</mo><msup><mtext>(distance from the average)</mtext><mn>2</mn></msup></mrow></mfrac></math>
+        <p>It is about straightness, not agreement: real lung cancer has R² 0.990 but a much steeper slope than the
+          model at r = 4. Compare <b>slopes</b> to compare lines, and use the <b>total miss</b> to check the
+          simulation.</p>
+      </div>
+    </section>
+
+    <div class="legend">
+      <span><i class="dot" style="background: var(--blue)"></i> simulated rate, one dot per 5-year age group (point at a dot for details)</span>
+      <span><i class="sw" style="border-color: var(--blue); border-top-style: dashed"></i> line fitted to the blue dots</span>
+      <span><i class="sw" style="border-color: var(--ink)"></i> exact model</span>
+      <span><i class="dot" style="background: var(--orange)"></i> real rate, moved up or down to meet the model (see About Data)</span>
+      <span><i class="ring"></i> largest gap</span>
+      <span><i class="band"></i> ages 25–84, used to measure the slope</span>
+    </div>
+
+    <div class="graphs" id="graphs">
+      <div id="logGraph"></div>
+      <div id="plainGraph"></div>
+      <div class="overlay">Simulating 20,000 people…</div>
+    </div>
   </div>
 
-  <div class="graphs" id="graphs">
-    <div id="logGraph"></div>
-    <div id="plainGraph"></div>
-    <div class="overlay">Simulating 20,000 people…</div>
+  <div class="panel data" id="dataPanel" hidden>
+    <h2>Where the real numbers come from</h2>
+    <p><b>Source:</b> Cancer Incidence in Five Continents, Volume XII (CI5-XII), from the International Agency for
+      Research on Cancer. It counts <b>new cancer cases</b> (not deaths) and the population at risk, by five-year age
+      group. We use one registry: <b>England, 2013–2017, men</b>, and three cancers: lung, stomach and colon.</p>
+    <p><b>Rate</b> = new cases ÷ person-years (the number of years people of that age were alive in the registry, added
+      up). For example, colon cancer at ages 60–64: 6,082 cases ÷ 7,188,268 person-years = 84.6 per 100,000.</p>
+    <p><b>Slope:</b> fitted on the log-log graph over ages 25–84, the same ages as the model. Younger ages are mostly
+      childhood cancers, which work differently (for example, Knudson's two-hit retinoblastoma), and 85+ is one
+      open-ended group with no middle age.</p>
+    <p><b>Why the real dots are moved up or down:</b> the model's N and p are scaled-up stand-ins, so its height isn't
+      meant to match real rates; only the shape is. The real rates are multiplied by one number so the real line meets
+      the model's exact line at age 62.5. That moves the line without changing its slope.</p>
+
+    <h2><span id="dataCancer"></span> cancer, England 2013–2017, men</h2>
+    <p>Real slope: <b id="dataSlope"></b><br>Moved on the graphs by: <b id="dataShift"></b></p>
+    <table>
+      <thead><tr><th>Ages</th><th>New cases</th><th>Person-years</th><th>Rate per 100,000</th></tr></thead>
+      <tbody id="dataRows"></tbody>
+    </table>
+    <p style="color: var(--muted); font-size: 12px;">Grey rows (under 25) are not used for the slope.</p>
+
+    <h2>Citation</h2>
+    <p>Bray F, Colombet M, Aitken JF, et al., editors (2023). <i>Cancer Incidence in Five Continents, Vol. XII</i>
+      (IARC CancerBase No. 19). Lyon: International Agency for Research on Cancer.
+      <a href="https://ci5.iarc.who.int">ci5.iarc.who.int</a>. The data may be freely used with acknowledgement of
+      the source, but not for sale or commercial purposes.</p>
   </div>
 
   <footer>
-    Real data: Bray F, Colombet M, Aitken JF, et al., editors (2023). <i>Cancer Incidence in Five Continents,
-    Vol. XII</i> (IARC CancerBase No. 19). Lyon: International Agency for Research on Cancer.
-    <a href="https://ci5.iarc.who.int">ci5.iarc.who.int</a>. The real rates are moved up or down (shown as "×k") to meet
-    the model at age 62.5, so the shapes can be compared; the model's height is a scaled stand-in.
-    Model: Armitage P, Doll R (1954), Br J Cancer 8:1–12. Code: 02-120 final project.
+    Model: Armitage P, Doll R (1954). The age distribution of cancer and a multi-stage theory of carcinogenesis.
+    Br J Cancer 8:1–12. Real data: CI5-XII (see About Data). Code: 02-120 final project.
   </footer>
 </main>
+<div id="tip"></div>
 <script src="model.js"></script>
 <script src="ci5.js"></script>
 <script src="app.js"></script>

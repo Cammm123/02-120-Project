@@ -2,7 +2,7 @@
 // Every expected number below was worked out by hand (or by a separate,
 // differently written program) rather than copied from model.js output.
 
-const { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates, zScores, summarizeZ, runReport, realRates, shiftToMeet } = require("./model.js");
+const { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates, zScores, summarizeZ, runReport, realRates, shiftToMeet, matchVerdict } = require("./model.js");
 
 let passed = 0;
 let failed = 0;
@@ -1148,6 +1148,32 @@ console.log("\nshiftToMeet");
 }
 checkThrows("age 0", () => shiftToMeet({ slope: 1, intercept: 0 }, { slope: 1, intercept: 0 }, 0), "age must be a number > 0");
 checkThrows("missing fit", () => shiftToMeet(null, { slope: 1, intercept: 0 }, 5), "fit and targetFit need a slope and an intercept");
+
+
+// ---------------------------------------------------------------------------
+// matchVerdict(zSummary): the pass line (spec HAND CHECK 6, decided 2026-11-16).
+// With pure noise, sum of z^2 over k groups averages k with spread sqrt(2k)
+// (measured over 20 seeds: 12.3, 8.9, 12.2 for k = 12, 8, 12). Pass line = k + 3 sqrt(2k).
+// ---------------------------------------------------------------------------
+console.log("\nmatchVerdict");
+{
+  // 1. k = 12: line = 12 + 3 x sqrt(24) = 12 + 3 x 4.89898 = 26.697.
+  const v = safe(() => matchVerdict({ sumZ2: 20.9, groupsInSum: 12, largest: null })) || {};
+  checkClose("k=12: pass line 12 + 3 sqrt(24) = 26.697", Math.round(v.passLine * 1000) / 1000, 26.697);
+  check("k=12, sum 20.9 (seed 1): matches", v.matches, true);
+  check("k=12, sum 26.6: matches", (safe(() => matchVerdict({ sumZ2: 26.6, groupsInSum: 12 })) || {}).matches, true);
+  check("k=12, sum 26.8: does not match", (safe(() => matchVerdict({ sumZ2: 26.8, groupsInSum: 12 })) || {}).matches, false);
+  // 2. k = 8: line = 8 + 3 x 4 = 20 exactly.
+  checkClose("k=8: pass line 8 + 3 x 4 = 20", (safe(() => matchVerdict({ sumZ2: 1, groupsInSum: 8 })) || {}).passLine, 20);
+  check("k=8, sum exactly 20: matches (the line itself passes)", (safe(() => matchVerdict({ sumZ2: 20, groupsInSum: 8 })) || {}).matches, true);
+  // 3. k = 2: line = 2 + 3 x 2 = 8.
+  checkClose("k=2: pass line 2 + 3 x 2 = 8", (safe(() => matchVerdict({ sumZ2: 0, groupsInSum: 2 })) || {}).passLine, 8);
+  // 4. No groups to judge: no verdict (null), not a pass.
+  check("k=0: no verdict", safe(() => matchVerdict({ sumZ2: 0, groupsInSum: 0, largest: null })), null);
+  // 5. End to end: seed 1 defaults match (sum 20.9 < 26.7).
+  const rep = safe(() => runReport(20000, 100, 4, 0.005, 1));
+  check("defaults seed 1 through runReport: matches", (safe(() => matchVerdict(rep.zSummary)) || {}).matches, true);
+}
 
 // ---------------------------------------------------------------------------
 console.log(`\n${passed} passed, ${failed} failed`);

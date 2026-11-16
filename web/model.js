@@ -423,4 +423,18 @@ function shiftToMeet(fit, targetFit, age) {
   return Math.exp((targetFit.intercept + targetFit.slope * logAge) - (fit.intercept + fit.slope * logAge));
 }
 
-if (typeof module !== "undefined") module.exports = { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates, zScores, summarizeZ, runReport, realRates, shiftToMeet, SLOPE_FROM };
+/**
+ * The pass line (spec HAND CHECK 6, decided by Cameron 2026-11-16). With pure
+ * noise, the sum of z^2 over k groups averages k with spread sqrt(2k); measured
+ * over 20 seeds it did (12.3, 8.9, 12.2 for k = 12, 8, 12). A run matches the
+ * exact model when sumZ2 <= k + 3 sqrt(2k) (3 times the spread, the spec rule).
+ * Returns { passLine, matches }, or null when no group could be judged (k = 0).
+ */
+function matchVerdict(zSummary) {
+  const k = zSummary.groupsInSum;
+  if (!(k > 0)) return null;
+  const passLine = k + 3 * Math.sqrt(2 * k);
+  return { passLine, matches: zSummary.sumZ2 <= passLine };
+}
+
+if (typeof module !== "undefined") module.exports = { makeRng, stepCell, YEARS, simulatePerson, simulatePopulation, ageGroupRates, fitLine, logLogFit, cellDoneChance, expectedRates, zScores, summarizeZ, runReport, realRates, shiftToMeet, matchVerdict, SLOPE_FROM, FEW_CASES };

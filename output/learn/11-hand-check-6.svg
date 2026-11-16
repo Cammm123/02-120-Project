@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="330" viewBox="0 0 760 330" font-family="Helvetica, Arial, sans-serif">
+<rect width="760" height="330" fill="#fcfcfb"/>
+<text x="24" y="30" font-size="18" font-weight="600" fill="#0b0b0b">HAND CHECK 6: 20 seeds, simulated slope minus exact slope</text>
+<text x="24" y="52" font-size="13" fill="#52514e">One dot per seed (20,000 people each). 0 = the simulation's slope equals the exact model's. Bar = average.</text>
+<line x1="238.8888888888889" y1="74" x2="238.8888888888889" y2="290" stroke="#e6e5e0" />
+<text x="238.8888888888889" y="308" font-size="11" fill="#52514e" text-anchor="middle">-1.0</text>
+<line x1="296.6666666666667" y1="74" x2="296.6666666666667" y2="290" stroke="#e6e5e0" />
+<text x="296.6666666666667" y="308" font-size="11" fill="#52514e" text-anchor="middle">-0.8</text>
+<line x1="354.44444444444446" y1="74" x2="354.44444444444446" y2="290" stroke="#e6e5e0" />
+<text x="354.44444444444446" y="308" font-size="11" fill="#52514e" text-anchor="middle">-0.6</text>
+<line x1="412.2222222222222" y1="74" x2="412.2222222222222" y2="290" stroke="#e6e5e0" />
+<text x="412.2222222222222" y="308" font-size="11" fill="#52514e" text-anchor="middle">-0.4</text>
+<line x1="470" y1="74" x2="470" y2="290" stroke="#e6e5e0" />
+<text x="470" y="308" font-size="11" fill="#52514e" text-anchor="middle">-0.2</text>
+<line x1="527.7777777777778" y1="74" x2="527.7777777777778" y2="290" stroke="#9a9994" stroke-width="1.5"/>
+<text x="527.7777777777778" y="308" font-size="11" fill="#52514e" text-anchor="middle">-0.0</text>
+<line x1="585.5555555555555" y1="74" x2="585.5555555555555" y2="290" stroke="#e6e5e0" />
+<text x="585.5555555555555" y="308" font-size="11" fill="#52514e" text-anchor="middle">0.2</text>
+<line x1="643.3333333333333" y1="74" x2="643.3333333333333" y2="290" stroke="#e6e5e0" />
+<text x="643.3333333333333" y="308" font-size="11" fill="#52514e" text-anchor="middle">0.4</text>
+<line x1="701.1111111111111" y1="74" x2="701.1111111111111" y2="290" stroke="#e6e5e0" />
+<text x="701.1111111111111" y="308" font-size="11" fill="#52514e" text-anchor="middle">0.6</text>
+<text x="470" y="330" font-size="12" fill="#52514e" text-anchor="middle">simulated slope − exact slope</text>
+<text x="198" y="111" font-size="13" fill="#0b0b0b" text-anchor="end">defaults: r = 4, p = 0.005</text>
+<text x="198" y="128" font-size="11" fill="#52514e" text-anchor="end">average −0.01, spread 0.17</text>
+<circle cx="505.0" cy="105.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="460.9" cy="110.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="471.1" cy="115.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="572.5" cy="120.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="531.4" cy="125.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="424.6" cy="105.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="590.3" cy="110.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="522.8" cy="115.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="512.8" cy="120.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="464.3" cy="125.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="460.0" cy="105.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="564.5" cy="110.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="596.4" cy="115.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="527.6" cy="120.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="548.0" cy="125.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="589.5" cy="105.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="551.5" cy="110.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="565.2" cy="115.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="544.7" cy="120.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="522.9" cy="125.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<line x1="526.2944230874663" y1="99" x2="526.2944230874663" y2="131" stroke="#0b0b0b" stroke-width="3"/>
+<text x="198" y="181" font-size="13" fill="#0b0b0b" text-anchor="end">r = 6, p = 0.01</text>
+<text x="198" y="198" font-size="11" fill="#c8312b" text-anchor="end">average −0.27, spread 0.41</text>
+<circle cx="656.8" cy="175.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="417.6" cy="180.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="467.6" cy="185.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="614.5" cy="190.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="558.0" cy="195.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="534.9" cy="175.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="545.8" cy="180.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="642.1" cy="185.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="466.9" cy="190.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="447.3" cy="195.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="446.1" cy="175.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="375.9" cy="180.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="236.1" cy="185.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="504.4" cy="190.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="359.1" cy="195.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="330.3" cy="175.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="274.7" cy="180.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="316.2" cy="185.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="440.4" cy="190.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="363.2" cy="195.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<line x1="449.88310674331115" y1="169" x2="449.88310674331115" y2="201" stroke="#c8312b" stroke-width="3"/>
+<text x="198" y="251" font-size="13" fill="#0b0b0b" text-anchor="end">r = 2, p = 0.002</text>
+<text x="198" y="268" font-size="11" fill="#52514e" text-anchor="end">average −0.00, spread 0.03</text>
+<circle cx="526.2" cy="245.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="526.6" cy="250.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="536.8" cy="255.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="526.2" cy="260.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="544.7" cy="265.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="526.9" cy="245.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="524.4" cy="250.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="533.9" cy="255.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="520.6" cy="260.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="529.3" cy="265.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="514.4" cy="245.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="517.0" cy="250.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="522.9" cy="255.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="512.8" cy="260.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="534.2" cy="265.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="544.9" cy="245.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="521.6" cy="250.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="533.3" cy="255.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="517.3" cy="260.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<circle cx="527.9" cy="265.0" r="4" fill="#2a78d6" opacity="0.75"/>
+<line x1="527.0934108741374" y1="239" x2="527.0934108741374" y2="271" stroke="#0b0b0b" stroke-width="3"/>
+</svg>

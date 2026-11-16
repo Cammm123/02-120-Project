@@ -256,6 +256,29 @@ calculation on 2026-10-09.
    seeds, look at how much the z-scores and the slope vary from run to run,
    and set the line at about 3 times that spread. Write the measured numbers
    here when we have them.
+   MEASURED 2026-11-16 (web/learn-hc6.js, output/learn/11-hand-check-6.svg),
+   20 seeds x 20,000 people each:
+     setting             sim - exact slope     largest |z|          sum z^2
+                         mean   spread        >2      >3            mean (noise k)
+     r=4 p=0.005 (dflt)  -0.005  0.171       11/20    1/20          12.3 (12)
+     r=6 p=0.01          -0.270  0.412        9/20    1/20           8.9 (8)
+     r=2 p=0.002         -0.002  0.031       11/20    3/20          12.2 (12)
+   - Defaults: no bias. The "slope leans low" seen on Nov 9 (2.76 for seed 1)
+     was the luck of that seed.
+   - r = 6: the slope reads 0.27 low (2.9 standard errors). Cause found: the
+     young groups expect 0.7, 1.6, 3.2 cases, and groups that HAPPEN to get
+     0 cases are dropped, so the survivors are the lucky high ones. Fitting
+     only groups expecting >= 10 cases removed it (+0.18 +- 0.62). DECIDED
+     (Cameron): keep the current rule and document it (LIMITATIONS 5), and
+     don't change the method until it matches. The counts still agree (sum
+     z^2 8.9 vs 8).
+   - The largest |z| is above 2 in about half of correct runs (12 groups:
+     one is often unlucky) and above 3 in about 1 in 20.
+   PASS LINE (DECIDED, Cameron): the sum of z^2 behaves like pure noise at
+   every setting, so a run matches the exact model when
+   sum z^2 <= k + 3 sqrt(2k) (26.7 for 12 groups). matchVerdict in model.js.
+   The largest |z| is shown with the 2/3 color bands (Cameron) and marked on
+   the graph, but it is not the verdict.
 
 7. Slope vs r - 1 (proposal Test Cases 1 and 4): with r = 4, the slope is
    close to 3, but not equal, because hits are not perfectly rare:
@@ -451,3 +474,17 @@ collect these, 2026-11-09)
    the old age groups, and bends the slope (2.841 -> 2.676). See FIRST WEB
    VERSION, Sliders, for the measured table. The page lets readers go up to
    N = 400 and prints the lifetime risk, so they can see this for themselves.
+
+5. The simulated slope reads low when the cancer is rare at young ages
+   (found by HAND CHECK 6, 2026-11-16). At r = 6, p = 0.01 it averages 0.27
+   below the exact slope over 20 seeds. The age groups 25-29 ... 35-39 expect
+   only 0.7-3.2 cases among 20,000 people; a group that happens to get 0
+   cases can't go on a log axis and is dropped, so the groups that stay are
+   the lucky high ones, which flattens the line. The COUNTS still match the
+   exact model (sum of z^2 at the noise level), so this is a bias in
+   measuring the slope, not a disagreement between the simulation and the
+   model. DECIDED (Cameron): keep the rule and report the bias, rather than
+   change the method until it matches. A fix that was tested: fit only the
+   groups expected (before the run) to have >= 10 cases. More people per run
+   would also shrink it. The model-vs-real-data comparison is unaffected,
+   because real counts are in the thousands.

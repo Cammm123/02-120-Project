@@ -558,3 +558,42 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
 2. Deploy on Vercel (by ~Nov 18) and put the URL in README.md.
 3. HAND CHECK 6/7 (20 seeds) to set the pass line.
 4. v2 carcinogen before Dec 1.
+
+## 2026-11-16: HAND CHECK 6, the pass line, and a website redesign
+
+- HAND CHECK 6 done (20 seeds × 3 settings; `web/learn-hc6.js`,
+  `output/learn/11-hand-check-6.svg`, numbers in spec.txt):
+  - Defaults are unbiased: simulated − exact slope averages −0.005, spread
+    0.17. The Nov 9 "leans low" was seed 1's luck.
+  - r = 6, p = 0.01 reads 0.27 low (2.9 SE). Cause: the young groups expect
+    0.7–3.2 cases, and groups that happen to get 0 are dropped, so the
+    survivors are the lucky high ones.
+    - A tested fix existed: fit only groups expected to have ≥ 10 cases.
+    - DECIDED (me): keep the rule and document it as LIMITATIONS 5. I don't
+      want to change the method until it matches; a mismatch can be a
+      finding. The counts still agree (sum z² 8.9 vs 8).
+  - The largest |z| is above 2 in about half of correct runs (12 groups).
+  - PASS LINE (me): sum z² ≤ k + 3√(2k) (26.7 for 12 groups).
+    `matchVerdict` in model.js; 9 tests (failed first). 296 tests pass.
+- Website, my notes from the demo:
+  - tile text says what each slope IS (exact = formula, simulated = one
+    run, real = data), with R² on its own line
+  - new About Data tab (source, how a rate is calculated, why 25–84, why the
+    shift, a table per cancer, citation); no data details on the main tiles
+  - real tooltips as bullet lists
+  - a thicker dashed fitted line on top
+  - the match panel with a ✓/✗ verdict, the largest gap colored (2/3 bands)
+    and ringed on both graphs
+  - a separate "How to read these" box with the equations in MathML (z,
+    total miss, pass line, R²)
+- Learned: R² is about how straight the points are, not whether two lines
+  agree. Lung has R² 0.990 but slope 6.85 vs the model's 2.84; the slopes are
+  the comparison. Matching lung needs r ≈ 7–8 (exact 6.14 at r = 7, 7.28 at
+  r = 8).
+- STILL TO CHECK: the "Done in …" time in my own browser (headless said 4.3 s
+  on Nov 14).
+
+### Next steps
+1. My browser's run time; speed up if needed.
+2. Deploy on Vercel before Nov 20 and put the URL in README.md.
+3. v2 carcinogen before Dec 1.
