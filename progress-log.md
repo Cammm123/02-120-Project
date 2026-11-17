@@ -618,3 +618,10 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
 1. Deploy on Vercel (Root Directory = web) before Nov 20, then write README.md
    with the URL.
 2. v2 carcinogen before Dec 1.
+
+- DEPLOYED: https://02-120-project-web.vercel.app (Vercel, Root Directory web,
+  updates on every push). Live files are byte-identical to the repo. In Chrome
+  the live page shows 8.8% / 2.84 / 6.85, both graphs, 17 About Data rows and
+  the 4 equations. Run button speed on the live site: still for me to check.
+- README.md written (live URL, the question quoted from my proposal, what v1
+  does and doesn't do yet, how to run the tests, files, sources, limitations).
