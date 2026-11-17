@@ -60,6 +60,7 @@ function matchSummary(sim) {
     noiseLow: k - Math.sqrt(2 * k),
     noiseHigh: k + Math.sqrt(2 * k),
     verdict: matchVerdict(z), // {passLine, matches} or null
+    rows: fromSlopeAge.map((g) => ({ start: g.start, end: g.end, simulated: g.simulatedCases, expected: g.expectedCases, z: g.z, note: g.note })),
     fewCases: fromSlopeAge.filter((g) => g.note === "few cases").length,
     impossible: sim.groups.filter((g) => g.note === "impossible: expected 0").map((g) => `${g.start}-${g.end}`),
   };
@@ -220,7 +221,8 @@ if (typeof document !== "undefined") {
     tile("tLife", `${(100 * nums.lifetimeRisk).toFixed(1)}%`, "Chance a simulated person gets cancer by age 85.");
     tile("tExact", nums.exactFit ? nums.exactFit.slope.toFixed(2) : "–",
       nums.exactFit
-        ? `What the model predicts, worked out by formula, with no randomness. The simple rule says r − 1 = ${st.r - 1}.${r2(nums.exactFit)}`
+        ? `What the model predicts, worked out by formula, with no randomness. The simple rule says about r − 1 = ${st.r - 1}; ` +
+          `the exact slope comes out lower when hits are common.${r2(nums.exactFit)}`
         : "No cases from age 25 up, so no slope.");
     tile("tSim", nums.simFit ? nums.simFit.slope.toFixed(2) : "–",
       nums.simFit
@@ -251,10 +253,28 @@ if (typeof document !== "undefined") {
       m.fewCases ? `${m.fewCases} age group(s) from 25 up expected fewer than 10 cancers, so their gap is too unreliable to count.` : "",
       m.impossible.length ? `<b class="red">Impossible: cancers in ${m.impossible.join(", ")}, where the exact model expects none. This would be a bug.</b>` : "",
     ].filter(Boolean).map((t) => `<div class="small">${t}</div>`).join("");
+    const maxBar = Math.max(3, ...m.rows.filter((g) => g.z !== null).map((g) => Math.abs(g.z)));
+    const rows = m.rows.map((g) => {
+      const counted = g.z !== null && g.note === null;
+      const level = counted ? zLevel(g.z) : "plain";
+      const barColor = level === "red" ? "#c8312b" : level === "yellow" ? "#d4a017" : "#9fb8d8";
+      const bar = g.z === null ? "" :
+        `<span class="bar" style="width:${Math.round(60 * Math.abs(g.z) / maxBar)}px;background:${counted ? barColor : "#d9d8d3"}"></span>`;
+      const why = g.note === "few cases" ? "fewer than 10 expected: not counted"
+        : g.note ? g.note : `${g.z > 0 ? "more" : "fewer"} than expected`;
+      return `<tr${counted ? "" : ' class="dim"'}><td>${g.start}–${g.end}</td><td>${g.simulated}</td><td>${g.expected.toFixed(1)}</td>` +
+        `<td>${g.z === null ? "–" : `<span class="${counted ? level : ""}">${g.z.toFixed(2)}</span>`}</td><td>${bar}</td><td>${why}</td></tr>`;
+    }).join("");
     return `${verdict}
-      <div><b>Largest gap (one age group):</b> ${worst}</div>
-      <div><b>Total miss (all ${m.groups} age groups together):</b> <b>${m.sumZ2.toFixed(1)}</b></div>
-      ${extra}`;
+      <div><b>Largest gap:</b> ${worst}</div>
+      <div><b>Total miss over the ${m.groups} age groups counted:</b> <b>${m.sumZ2.toFixed(1)}</b>
+        (pass line ${v ? v.passLine.toFixed(1) : "–"}).</div>
+      ${extra}
+      <table class="gaps">
+        <thead><tr><th>Ages</th><th>Simulated cancers</th><th>Expected cancers</th><th>Gap (z)</th><th></th><th>Direction</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="small">Every age group from 25 up. Grey rows expected too few cancers for a reliable gap, so they are left out of the total.</div>`;
   }
 
   /** The About Data tab: where the real numbers come from, for the chosen cancer. */

@@ -40,7 +40,15 @@
   .box .title { font-weight: 600; margin-bottom: 4px; }
   .box .small { font-size: 12px; color: var(--muted); line-height: 1.4; margin-top: 4px; }
   .howto { background: #f6f6f3; font-size: 13px; line-height: 1.5; }
-  .howto p { margin: 0 0 8px; }
+  .howto p { margin: 6px 0 2px; }
+  .howto ul { margin: 2px 0 8px; padding-left: 18px; }
+  .howto li { margin: 2px 0; }
+  .gaps { border-collapse: collapse; font-size: 13px; margin: 8px 0 4px; width: 100%; }
+  .gaps th, .gaps td { border-bottom: 1px solid var(--grid); padding: 3px 8px 3px 0; text-align: right; }
+  .gaps th:first-child, .gaps td:first-child, .gaps th:last-child, .gaps td:last-child { text-align: left; }
+  .gaps th { color: var(--muted); font-weight: 600; }
+  .gaps tr.dim td { color: #9a9994; }
+  .bar { display: inline-block; height: 8px; border-radius: 2px; vertical-align: middle; }
   .howto math[display=block] { margin: 4px 0 10px; font-size: 15px; }
   #tip ul { margin: 4px 0 0; padding-left: 16px; }
   #tip li { margin: 1px 0; }
@@ -128,22 +136,34 @@
       </div>
       <div class="box howto">
         <div class="title">How to read these</div>
-        <p><b>Gap for one age group (z):</b> how many "noise units" the group is off.</p>
+        <p><b>Gap (z) for one age group</b></p>
         <math display="block"><mi>z</mi><mo>=</mo><mfrac><mrow><mtext>simulated cancers</mtext><mo>−</mo><mtext>expected cancers</mtext></mrow><msqrt><mtext>expected cancers</mtext></msqrt></mfrac></math>
-        <p>Random chance alone usually keeps z between −2 and +2. The page shows its size, ignoring whether it's too
-          many or too few. <b>Colors for the largest gap:</b> up to 2 plain; 2 to 3 <span class="yellow">yellow</span>;
-          over 3 <span class="red">red</span>. With 12 age groups, one above 2 happens in about half of correct runs,
-          so yellow on its own is not a problem.</p>
-        <p><b>Total miss:</b> every group's gap squared, added up (k = number of age groups judged).</p>
+        <ul>
+          <li>Measures how many "noise units" the group is off.</li>
+          <li>Random chance alone usually keeps it between −2 and +2.</li>
+          <li>Colors: up to 2 is plain, 2 to 3 is <span class="yellow">yellow</span>, over 3 is <span class="red">red</span>.</li>
+          <li>With 12 age groups, one gap above 2 shows up in about half of correct runs. Yellow on its own is not a problem.</li>
+        </ul>
+        <p><b>Total miss</b>, over the k age groups that have enough cases to judge</p>
         <math display="block"><mtext>total miss</mtext><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>k</mi></munderover><msubsup><mi>z</mi><mi>i</mi><mn>2</mn></msubsup></math>
-        <p>With pure chance it averages k (about 12). <b>Pass line</b>, set by running 20 seeds:</p>
-        <math display="block"><mtext>pass line</mtext><mo>=</mo><mi>k</mi><mo>+</mo><mn>3</mn><msqrt><mn>2</mn><mi>k</mi></msqrt><mspace width="0.6em"/><mtext>(26.7 when k = 12)</mtext></math>
-        <p><b>R²</b> on the slope tiles: how straight the points are around <i>their own</i> line on the log-log graph
-          (1 = perfectly straight).</p>
+        <ul>
+          <li>Adds up every group's gap, squared, so misses in either direction count.</li>
+          <li>By pure chance it averages k. With 12 groups, that is about 12.</li>
+        </ul>
+        <p><b>Pass line</b></p>
+        <math display="block"><mtext>pass line</mtext><mo>=</mo><mi>k</mi><mo>+</mo><mn>3</mn><msqrt><mn>2</mn><mi>k</mi></msqrt></math>
+        <ul>
+          <li>For 12 groups it is 26.7.</li>
+          <li>Set by running the simulation with 20 different seeds and allowing 3 times the normal spread.</li>
+          <li>A run whose total miss is below the line matches the exact model.</li>
+        </ul>
+        <p><b>R²</b> on the slope tiles</p>
         <math display="block"><msup><mi>R</mi><mn>2</mn></msup><mo>=</mo><mn>1</mn><mo>−</mo><mfrac><mrow><mo>∑</mo><msup><mtext>(miss from the line)</mtext><mn>2</mn></msup></mrow><mrow><mo>∑</mo><msup><mtext>(distance from the average)</mtext><mn>2</mn></msup></mrow></mfrac></math>
-        <p>It is about straightness, not agreement: real lung cancer has R² 0.990 but a much steeper slope than the
-          model at r = 4. Compare <b>slopes</b> to compare lines, and use the <b>total miss</b> to check the
-          simulation.</p>
+        <ul>
+          <li>Measures how straight the points are around their own line on the log-log graph. 1 means perfectly straight.</li>
+          <li>It does not say whether two lines agree. Real lung cancer has R² 0.990 but a much steeper slope than the model at r = 4.</li>
+          <li>To compare lines, compare their slopes. To check the simulation, use the total miss.</li>
+        </ul>
       </div>
     </section>
 

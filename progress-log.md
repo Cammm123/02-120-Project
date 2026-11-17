@@ -597,3 +597,24 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
 1. My browser's run time; speed up if needed.
 2. Deploy on Vercel before Nov 20 and put the URL in README.md.
 3. v2 carcinogen before Dec 1.
+
+## 2026-11-17: speed fix, readability, ready to deploy
+
+- SPEED: my browser took 4.4 s per run (node 0.75 s). Measured the cause: the
+  random generator's four mutable closure variables are ~5× slower in Chrome
+  (50M draws 1,382 ms vs 287 ms in node). Moved them into an Int32Array.
+  The first 2,000,000 draws are identical for 5 seeds, and all 296 tests pass
+  unchanged. A Chrome run went from 4,362 ms to 468–658 ms.
+- Readability (my notes):
+  - "How to read these" as bullets under each equation, fewer parentheses
+  - the match panel gets a table of every age group from 25 up (simulated,
+    expected, z with its color, a bar, the direction; grey = not counted)
+  - the exact-slope tile says "about r − 1; lower when hits are common"
+- Learned: r = 5, p = 0.0075 gives an exact slope of 3.79, not 4: the misses
+  again (0.822 at 30 → 0.564 at 80); with p = 0.001 it's 4.12. Its R² is
+  0.9995: straight, just less steep. R² is not "matches r − 1".
+
+### Next steps
+1. Deploy on Vercel (Root Directory = web) before Nov 20, then write README.md
+   with the URL.
+2. v2 carcinogen before Dec 1.
