@@ -625,3 +625,17 @@ age 20 up the points follow the line; groups 0-4 and 5-9 have no cases, and
   the 4 equations. Run button speed on the live site: still for me to check.
 - README.md written (live URL, the question quoted from my proposal, what v1
   does and doesn't do yet, how to run the tests, files, sources, limitations).
+
+## 2026-11-20: checkpoint 3 check (journal + live site)
+
+- No project work Nov 18–19 (busy with other classes); back to steady sessions.
+- Run button on the live site, in my browser (Dia, built on Chromium): first try
+  said 4.3 s, which is the old pre-fix time. The live model.js is identical to the
+  repo and has the Int32Array fix, so it wasn't the deploy. After a hard reload
+  (Cmd+Shift+R): 459 ms, 660 ms, 654 ms (default settings). The 4.3 s came from
+  an old copy of the page in the browser; the speed fix works live.
+- Committed the Nov 16–17 journal logs.
+
+### Next steps
+1. v2 carcinogen before Dec 1 (spec first).
+2. Video demo (5 min, my voice), linked from README and the site.
